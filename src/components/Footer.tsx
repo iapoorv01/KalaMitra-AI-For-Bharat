@@ -74,16 +74,49 @@ export default function Footer() {
     <footer className="bg-[var(--bg-1)] border-t border-[var(--border)] mt-auto text-[var(--text)]">
       <div className="max-w-7xl mx-auto px-5 sm:px-10 md:px-12 lg:px-5 grid grid-cols-2 lg:grid-cols-6 gap-12 lg:gap-16 py-20">
 
-        {/* Brand Section */}
-        <div className="space-y-6 col-span-2">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="relative w-24 h-24">
-              <Image src="/kalamitra-symbol.png" alt="KalaMitra Symbol" fill className="object-contain" />
+          {/* Quick Links */}
+          <div>
+  <h3 className="text-lg font-semibold text-[var(--text)] mb-6">{t('footer.quickLinks')}</h3>
+            <div className="space-y-4">
+                <a href="/about" className="block text-[var(--muted)] hover:text-heritage-gold transition-all duration-300 hover:translate-x-2 transform group">
+              <span className="group-hover:underline">{t('footer.about')}</span>
+                </a>
+                <a href="/howitworks" className="block text-[var(--muted)] hover:text-heritage-gold transition-all duration-300 hover:translate-x-2 transform group">
+              <span className="group-hover:underline">{t('footer.howItWorks')}</span>
+                </a>
+                <a href="/successstories" className="block text-[var(--muted)] hover:text-heritage-gold transition-all duration-300 hover:translate-x-2 transform group">
+              <span className="group-hover:underline">{t('footer.successStories')}</span>
+                </a>
+                <a href="/support" className="block text-[var(--muted)] hover:text-heritage-gold transition-all duration-300 hover:translate-x-2 transform group">
+              <span className="group-hover:underline">{t('footer.support')}</span>
+                </a>
             </div>
-            <span className="text-2xl font-bold">{t('brand.name')}</span>
-          </Link>
-          <p className="max-w-lg text-[var(--muted)] leading-relaxed">
-            {t('footer.tagline')}
+          </div>
+
+          {/* Legal */}
+          <div>
+            <h3 className="text-lg font-semibold text-[var(--text)] mb-6">{t('footer.legal')}</h3>
+            <div className="space-y-4">
+              <a href="/policy" className="block text-[var(--muted)] hover:text-heritage-gold transition-all duration-300 hover:translate-x-2 transform group">
+                <span className="group-hover:underline">{t('footer.privacy')}</span>
+              </a>
+              <a href="/terms" className="block text-[var(--muted)] hover:text-heritage-gold transition-all duration-300 hover:translate-x-2 transform group">
+                <span className="group-hover:underline">{t('footer.terms')}</span>
+              </a>
+              <a href="/cookies" className="block text-[var(--muted)] hover:text-heritage-gold transition-all duration-300 hover:translate-x-2 transform group">
+                <span className="group-hover:underline">{t('footer.cookies')}</span>
+              </a>
+              <a href="/contact" className="block text-[var(--muted)] hover:text-heritage-gold transition-all duration-300 hover:translate-x-2 transform group">
+                <span className="group-hover:underline">{t('footer.contact')}</span>
+              </a>
+            </div>
+          </div>
+        </div>
+        
+        {/* Bottom Bar */}
+        <div className="border-t border-[var(--border)] mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+          <p className="text-[var(--muted)] text-sm">
+            {t('footer.copyright')}
           </p>
         </div>
 
