@@ -459,57 +459,22 @@ export default function Navbar() {
       }
     }
     fetchCartCount();
-
-    // Poll for cart changes every 2 seconds for both logged-in and anonymous users
-    const interval = setInterval(fetchCartCount, 2000);
-
-    // Listen for custom cartUpdated event for immediate updates
-    const handleCartUpdate = () => {
-      fetchCartCount();
-    };
-    if (typeof window !== 'undefined') {
-      window.addEventListener('cartUpdated', handleCartUpdate);
-    }
-
-    // Listen for storage events (for anonymous users in different tabs)
-    let handleStorageChange: (() => void) | null = null;
+    
+    // Listen for cart changes (for anonymous users via storage events and periodic check)
+    let interval: NodeJS.Timeout | null = null;
     if (!user?.id && typeof window !== 'undefined') {
-      handleStorageChange = () => {
+      const handleStorageChange = () => {
         fetchCartCount();
       };
       window.addEventListener('storage', handleStorageChange);
-    }
-
-    // Subscribe to real-time cart changes for logged-in users
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-    if (user?.id) {
-      channel = supabase
-        .channel(`cart:${user.id}`)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'cart',
-            filter: `buyer_id=eq.${user.id}`,
-          },
-          () => {
-            fetchCartCount();
-          }
-        )
-        .subscribe();
-    }
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('cartUpdated', handleCartUpdate);
-      if (handleStorageChange) {
+      // Also check periodically for changes (in same tab)
+      interval = setInterval(fetchCartCount, 1000);
+      
+      return () => {
         window.removeEventListener('storage', handleStorageChange);
-      }
-      if (channel) {
-        channel.unsubscribe();
-      }
-    };
+        if (interval) clearInterval(interval);
+      };
+    }
   }, [user?.id]);
 
   // Prevent hydration mismatch by showing consistent structure during loading

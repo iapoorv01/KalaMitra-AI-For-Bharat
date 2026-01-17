@@ -411,9 +411,6 @@ export default function ProductDetail() {
         addToAnonymousCart(product.id, quantity)
         setCartModalStatus('success');
         setCartModalMessage(t('cart.addedSuccess'));
-        
-        // Dispatch custom event to immediately update cart count in navbar
-        window.dispatchEvent(new CustomEvent('cartUpdated'));
         setCartModalOpen(true);
         return;
       }

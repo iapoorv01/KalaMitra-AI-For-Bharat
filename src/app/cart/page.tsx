@@ -8,12 +8,11 @@ import { supabase } from '@/lib/supabase'
 import { Database } from '@/lib/supabase'
 import Link from 'next/link'
 import { useTranslation } from 'react-i18next'
-import {
-  getAnonymousCart,
-  updateAnonymousCartQuantity,
+import { 
+  getAnonymousCart, 
+  updateAnonymousCartQuantity, 
   removeFromAnonymousCart,
-  addToAnonymousCart,
-  clearAnonymousCart
+  clearAnonymousCart 
 } from '@/utils/cart'
 
 type DatabaseCartItem = Database['public']['Tables']['cart']['Row'] & {
@@ -35,6 +34,10 @@ type AnonymousCartItem = {
     image_url: string
     category: string
   }
+}
+
+type CartItem = (DatabaseCartItem | AnonymousCartItem) & { 
+  isAnonymous?: boolean 
 }
 
 type CartItem = (DatabaseCartItem | AnonymousCartItem) & {
@@ -66,37 +69,7 @@ export default function CartPage() {
 
   useEffect(() => {
     fetchCartItems()
-    if (profile?.wishlist) {
-      fetchWishlistItems()
-    }
   }, [user, profile])
-
-  const fetchWishlistItems = async () => {
-    if (!profile?.wishlist || profile.wishlist.length === 0) {
-      setWishlistItems([])
-      return
-    }
-    setWishlistLoading(true)
-    try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*, seller:profiles(name)')
-        .in('id', profile.wishlist)
-
-      if (error) throw error
-
-      // Filter out items already in cart
-      // We need to check both DB cart items and anonymous cart items ideally, 
-      // but cartItems state covers what's currently displayed.
-      // However, we need to wait for cartItems to be populated first or just do it in render.
-      // For now just set all and we can disable button if in cart.
-      setWishlistItems(data || [])
-    } catch (error) {
-      console.error('Error fetching wishlist for cart:', error)
-    } finally {
-      setWishlistLoading(false)
-    }
-  }
 
   const fetchCartItems = async () => {
     if (user) {
@@ -126,12 +99,12 @@ export default function CartPage() {
               .select('title, price, image_url, category')
               .eq('id', item.product_id)
               .single()
-
+            
             if (error || !product) {
               console.error('Error fetching product:', error)
               return null
             }
-
+            
             return {
               ...item,
               product,
@@ -143,7 +116,7 @@ export default function CartPage() {
           }
         })
       )
-
+      
       // Filter out null items (products that couldn't be fetched)
       setCartItems(itemsWithProducts.filter((item): item is CartItem => item !== null))
     }
@@ -153,13 +126,13 @@ export default function CartPage() {
   const updateQuantity = async (item: CartItem, newQuantity: number) => {
     const itemId = 'id' in item ? item.id : item.product_id
     setActionLoading(itemId)
-
+    
     if (newQuantity <= 0) {
       await removeFromCart(item)
       setActionLoading(null)
       return
     }
-
+    
     try {
       if (user && !item.isAnonymous && 'id' in item) {
         // Update in database for logged-in users
@@ -173,10 +146,6 @@ export default function CartPage() {
         const productId = item.product_id
         updateAnonymousCartQuantity(productId, newQuantity)
       }
-      
-      // Dispatch custom event to immediately update cart count in navbar
-      window.dispatchEvent(new CustomEvent('cartUpdated'));
-      
       setFeedback(t('cart.quantityUpdated'))
       await fetchCartItems()
     } catch (error) {
@@ -189,7 +158,7 @@ export default function CartPage() {
   const removeFromCart = async (item: CartItem) => {
     const itemId = 'id' in item ? item.id : item.product_id
     setActionLoading(itemId)
-
+    
     try {
       if (user && !item.isAnonymous && 'id' in item) {
         // Remove from database for logged-in users
@@ -203,10 +172,6 @@ export default function CartPage() {
         const productId = item.product_id
         removeFromAnonymousCart(productId)
       }
-      
-      // Dispatch custom event to immediately update cart count in navbar
-      window.dispatchEvent(new CustomEvent('cartUpdated'));
-      
       setFeedback(t('cart.removed'))
       await fetchCartItems()
     } catch (error) {
@@ -368,95 +333,79 @@ export default function CartPage() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="lg:col-span-2"
             >
-              <div className="bg-[var(--bg-2)] border border-[var(--border)]">
-                {/* Table Header */}
-                <div className="hidden sm:grid grid-cols-12 gap-4 p-6 border-b border-[var(--border)] text-xs uppercase tracking-widest text-[var(--muted)] font-medium">
-                  <div className="col-span-6">Product</div>
-                  <div className="col-span-2 text-center">Price</div>
-                  <div className="col-span-2 text-center">Quantity</div>
-                  <div className="col-span-2 text-right">Total</div>
-                </div>
-
-                <div className="divide-y divide-[var(--border)]">
-                  {cartItems.map((item, index) => {
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-orange-200">
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">
+                  {t('cart.items')} ({cartItems.length})
+                </h2>
+                <div className="space-y-3 sm:space-y-4">
+                  {cartItems.map((item) => {
                     const itemId = 'id' in item ? item.id : item.product_id
                     return (
                       <motion.div
                         key={itemId}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: index * 0.1 }}
-                        className="group p-6 hover:bg-[var(--bg-1)]/50 transition-colors"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-4 p-3 sm:p-4 border border-gray-200 rounded-lg"
                       >
-                        <div className="flex flex-col sm:grid sm:grid-cols-12 gap-6 items-center">
-
-                          {/* Product Info (Col 6) */}
-                          <div className="w-full sm:col-span-6 flex gap-6 items-center">
-                            <div className="w-20 h-20 sm:w-24 sm:h-24 bg-[var(--bg-3)] flex-shrink-0 border border-[var(--border)] relative overflow-hidden">
-                              {item.product.image_url ? (
-                                <img
-                                  src={item.product.image_url}
-                                  alt={item.product.title}
-                                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-[var(--muted)] text-xs">NO IMG</div>
-                              )}
+                        {/* Product Image */}
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                          {item.product.image_url ? (
+                            <img
+                              src={item.product.image_url}
+                              alt={item.product.title}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-orange-100 to-red-100 flex items-center justify-center">
+                              <span className="text-orange-400 text-xl sm:text-2xl">🎨</span>
                             </div>
-                            <div className="min-w-0">
-                              <h3 className="text-base font-medium text-[var(--text)] mb-1 truncate pr-4">
-                                {item.product.title}
-                              </h3>
-                              <p className="text-xs text-[var(--muted)] uppercase tracking-wide mb-3">
-                                {item.product.category}
-                              </p>
-                              <button
-                                onClick={() => removeFromCart(item)}
-                                disabled={!!actionLoading}
-                                className="text-xs text-[var(--muted)] hover:text-red-500 transition-colors flex items-center gap-1 group/delete"
-                              >
-                                <span className="w-4 h-px bg-[var(--muted)] group-hover/delete:bg-red-500 transition-colors"></span>
-                                Remove
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* Price (Col 2) */}
-                          <div className="w-full sm:col-span-2 text-center font-mono text-sm text-[var(--muted)]">
-                            <span className="sm:hidden mr-2 uppercase text-xs tracking-wide">Price:</span>
-                            ₹{item.product.price.toLocaleString()}
-                          </div>
-
-                          {/* Quantity (Col 2) */}
-                          <div className="w-full sm:col-span-2 flex justify-center">
-                            <div className="flex items-center border border-[var(--border)] bg-[var(--bg-1)] h-8">
-                              <button
-                                onClick={() => updateQuantity(item, item.quantity - 1)}
-                                disabled={actionLoading === itemId}
-                                className="w-8 h-full flex items-center justify-center hover:bg-[var(--bg-3)] transition-colors text-[var(--muted)] hover:text-[var(--text)] disabled:opacity-30"
-                              >
-                                -
-                              </button>
-                              <span className="w-8 h-full flex items-center justify-center font-mono text-sm border-x border-[var(--border)] bg-transparent">
-                                {item.quantity}
-                              </span>
-                              <button
-                                onClick={() => updateQuantity(item, item.quantity + 1)}
-                                disabled={actionLoading === itemId}
-                                className="w-8 h-full flex items-center justify-center hover:bg-[var(--bg-3)] transition-colors text-[var(--muted)] hover:text-[var(--text)] disabled:opacity-30"
-                              >
-                                +
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* Total (Col 2) */}
-                          <div className="w-full sm:col-span-2 text-right font-medium text-[var(--text)]">
-                            <span className="sm:hidden mr-2 uppercase text-xs tracking-wide text-[var(--muted)]">Total:</span>
-                            ₹{(item.product.price * item.quantity).toLocaleString()}
-                          </div>
-
+                          )}
                         </div>
+
+                        {/* Product Details */}
+                        <div className="flex-1 min-w-0 w-full sm:w-auto">
+                          <h3 className="font-semibold text-gray-900 truncate">
+                            {item.product.title}
+                          </h3>
+                          <p className="text-xs sm:text-sm text-gray-600">{item.product.category}</p>
+                          <p className="text-base sm:text-lg font-bold text-orange-600">
+                            ₹{item.product.price}
+                          </p>
+                        </div>
+
+                        {/* Quantity Controls */}
+                        <div className="flex items-center gap-1 sm:gap-2 mt-2 sm:mt-0">
+                          <button
+                            onClick={() => updateQuantity(item, item.quantity - 1)}
+                            className={`w-7 h-7 sm:w-8 sm:h-8 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors ${actionLoading === itemId ? 'opacity-60 cursor-wait' : ''}`}
+                            aria-label={t('cart.decreaseQuantity')}
+                            disabled={actionLoading === itemId}
+                          >
+                            -
+                          </button>
+                          <span className="w-10 sm:w-12 text-center font-medium">
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() => updateQuantity(item, item.quantity + 1)}
+                            className={`w-7 h-7 sm:w-8 sm:h-8 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors ${actionLoading === itemId ? 'opacity-60 cursor-wait' : ''}`}
+                            aria-label={t('cart.increaseQuantity')}
+                            disabled={actionLoading === itemId}
+                          >
+                            +
+                          </button>
+                        </div>
+
+                        {/* Remove Button */}
+                        <button
+                          onClick={() => removeFromCart(item)}
+                          className={`p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors ${actionLoading === itemId ? 'opacity-60 cursor-wait' : ''}`}
+                          title={t('cart.remove')}
+                          aria-label={t('cart.remove')}
+                          disabled={actionLoading === itemId}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </motion.div>
                     )
                   })}
