@@ -392,68 +392,6 @@ export default function SellerDashboard() {
     } else {
       alert('Speech recognition not supported in this browser.');
     }
-    const recognition = new SpeechRecognitionCtor();
-    const langMap: Record<string, string> = {
-      en: 'en-IN', hi: 'hi-IN', assamese: 'as-IN', bengali: 'bn-IN', bodo: 'brx-IN', dogri: 'doi-IN', gujarati: 'gu-IN', kannad: 'kn-IN', kannada: 'kn-IN', kashmiri: 'ks-IN', konkani: 'kok-IN', maithili: 'mai-IN', malyalam: 'ml-IN', malayalam: 'ml-IN', manipuri: 'mni-IN', marathi: 'mr-IN', nepali: 'ne-NP', oriya: 'or-IN', punjabi: 'pa-IN', sanskrit: 'sa-IN', santhali: 'sat-IN', sindhi: 'sd-IN', tamil: 'ta-IN', telgu: 'te-IN', telugu: 'te-IN', urdu: 'ur-IN', as: 'as-IN', bn: 'bn-IN', brx: 'brx-IN', doi: 'doi-IN', gu: 'gu-IN', kn: 'kn-IN', ks: 'ks-IN', kok: 'kok-IN', mai: 'mai-IN', ml: 'ml-IN', mni: 'mni-IN', mr: 'mr-IN', ne: 'ne-NP', or: 'or-IN', pa: 'pa-IN', sa: 'sa-IN', sat: 'sat-IN', sd: 'sd-IN', ta: 'ta-IN', te: 'te-IN', ur: 'ur-IN',
-    };
-  const appLang = i18n && i18n.language ? i18n.language : 'en';
-    recognition.lang = langMap[appLang] || appLang || 'en-IN';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      const transcript = event.results[0][0].transcript;
-      setRespondMessage(prev => prev ? prev + ' ' + transcript : transcript);
-    };
-    recognition.onerror = (event: Event) => {
-      const error = (event as { error?: string }).error;
-      alert('Voice input error: ' + (error || 'Unknown error'));
-    };
-    recognition.start();
-  } else {
-    alert('Speech recognition not supported in this browser.');
-  }
-};
-const [schemes, setSchemes] = useState<Scheme[]>([]);
-const [schemesLoading, setSchemesLoading] = useState(false);
-
-
-useEffect(() => {
-  if (activeSection !== 'schemeConnect') return;
-  let cancelled = false;
-  setSchemesLoading(true);
-
-  (async () => {
-    try {
-      // Only fetch active schemes: is_active = true and deadline is null or deadline >= today
-      const today = new Date().toISOString().slice(0, 10);
-      const { data, error } = await supabase
-        .from('schemes')
-        .select('*')
-        .eq('is_active', true)
-        .or(`deadline.is.null,deadline.gte.${today}`)
-        .order('created_at', { ascending: false });
-
-      if (cancelled) return;
-
-      if (error) {
-        setSchemes([]);
-        // Optionally, show error toast
-      } else {
-        setSchemes(data || []);
-      }
-    } catch (err) {
-      if (!cancelled) {
-        setSchemes([]);
-        // Optionally, log the error
-        console.error('Error fetching schemes:', err);
-      }
-    } finally {
-      if (!cancelled) setSchemesLoading(false);
-    }
-  })();
-
-  return () => {
-    cancelled = true;
   };
   const [schemes, setSchemes] = useState<Scheme[]>([]);
   const [schemesLoading, setSchemesLoading] = useState(false);
@@ -1318,7 +1256,7 @@ useEffect(() => {
                         >
                           {/* Show image if available */}
                           {donation.image_urls && donation.image_urls.length > 0 && donation.image_urls[0] && (
-                            <div className="relative h-40 sm:h-48 bg-gray-100 flex items-center justify-center border-b border-[var(--border)]">
+                            <div className="h-40 sm:h-48 bg-gray-100 flex items-center justify-center border-b border-[var(--border)]">
                               <Image
                                 src={donation.image_urls[0]}
                                 alt={donation.item_description}

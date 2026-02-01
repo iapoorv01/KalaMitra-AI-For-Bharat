@@ -1,6 +1,5 @@
 "use client"
 import Link from "next/link"
-import Image from "next/image"
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLanguage } from '@/components/LanguageProvider'
@@ -16,7 +15,7 @@ const FooterItem = ({ text, link }: { text: string, link: string }) => {
   )
 }
 
-const FooterBlockItem = ({ title, items }: { title: string, items: Array<{ id: number; link: string; text: string }> }) => {
+const FooterBlockItem = ({ title, items }: { title: string, items: Array<{id: number; link: string; text: string}> }) => {
   return (
     <div className="space-y-6">
       <h1 className="text-lg font-semibold text-[var(--text)]">{title}</h1>
@@ -74,49 +73,14 @@ export default function Footer() {
     <footer className="bg-[var(--bg-1)] border-t border-[var(--border)] mt-auto text-[var(--text)]">
       <div className="max-w-7xl mx-auto px-5 sm:px-10 md:px-12 lg:px-5 grid grid-cols-2 lg:grid-cols-6 gap-12 lg:gap-16 py-20">
 
-          {/* Quick Links */}
-          <div>
-  <h3 className="text-lg font-semibold text-[var(--text)] mb-6">{t('footer.quickLinks')}</h3>
-            <div className="space-y-4">
-                <a href="/about" className="block text-[var(--muted)] hover:text-heritage-gold transition-all duration-300 hover:translate-x-2 transform group">
-              <span className="group-hover:underline">{t('footer.about')}</span>
-                </a>
-                <a href="/howitworks" className="block text-[var(--muted)] hover:text-heritage-gold transition-all duration-300 hover:translate-x-2 transform group">
-              <span className="group-hover:underline">{t('footer.howItWorks')}</span>
-                </a>
-                <a href="/successstories" className="block text-[var(--muted)] hover:text-heritage-gold transition-all duration-300 hover:translate-x-2 transform group">
-              <span className="group-hover:underline">{t('footer.successStories')}</span>
-                </a>
-                <a href="/support" className="block text-[var(--muted)] hover:text-heritage-gold transition-all duration-300 hover:translate-x-2 transform group">
-              <span className="group-hover:underline">{t('footer.support')}</span>
-                </a>
-            </div>
-          </div>
-
-          {/* Legal */}
-          <div>
-            <h3 className="text-lg font-semibold text-[var(--text)] mb-6">{t('footer.legal')}</h3>
-            <div className="space-y-4">
-              <a href="/policy" className="block text-[var(--muted)] hover:text-heritage-gold transition-all duration-300 hover:translate-x-2 transform group">
-                <span className="group-hover:underline">{t('footer.privacy')}</span>
-              </a>
-              <a href="/terms" className="block text-[var(--muted)] hover:text-heritage-gold transition-all duration-300 hover:translate-x-2 transform group">
-                <span className="group-hover:underline">{t('footer.terms')}</span>
-              </a>
-              <a href="/cookies" className="block text-[var(--muted)] hover:text-heritage-gold transition-all duration-300 hover:translate-x-2 transform group">
-                <span className="group-hover:underline">{t('footer.cookies')}</span>
-              </a>
-              <a href="/contact" className="block text-[var(--muted)] hover:text-heritage-gold transition-all duration-300 hover:translate-x-2 transform group">
-                <span className="group-hover:underline">{t('footer.contact')}</span>
-              </a>
-            </div>
-          </div>
-        </div>
-        
-        {/* Bottom Bar */}
-        <div className="border-t border-[var(--border)] mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-[var(--muted)] text-sm">
-            {t('footer.copyright')}
+        {/* Brand Section */}
+        <div className="space-y-6 col-span-2">
+          <Link href="/" className="flex items-center gap-2">
+            <span className="text-transparent bg-clip-text bg-gradient-to-tr from-[var(--heritage-gold)] to-[var(--heritage-red)] font-bold text-2xl">KM</span>
+            <span className="text-xl font-bold">{t('brand.name')}</span>
+          </Link>
+          <p className="max-w-lg text-[var(--muted)] leading-relaxed">
+            {t('footer.tagline')}
           </p>
         </div>
 
@@ -129,16 +93,16 @@ export default function Footer() {
 
         {/* Newsletter Section */}
         <div className="space-y-6 col-span-2">
-          <h1 className="text-lg font-semibold text-[var(--text)]">{t('footer.subscribeTitle')}</h1>
+          <h1 className="text-lg font-semibold text-[var(--text)]">Subscribe</h1>
           <p className="text-[var(--muted)] text-sm">{t('footer.communityBlurb')}</p>
           <form className="w-full max-w-2xl flex flex-col sm:flex-row gap-3">
             <input
               type="email"
-              placeholder={t('footer.emailPlaceholder')}
+              placeholder="email@example.com"
               className="px-5 py-2.5 rounded-xl outline-none flex-1 bg-[var(--bg-2)] border border-[var(--border)] focus:border-[var(--heritage-gold)] transition-colors"
             />
             <button className="outline-none w-full py-2.5 px-5 sm:w-max bg-gradient-to-r from-[var(--heritage-gold)] to-[var(--heritage-red)] hover:opacity-90 text-white rounded-xl flex items-center justify-center font-semibold transition-opacity">
-              {t('footer.subscribeBtn')}
+              Subscribe
             </button>
           </form>
         </div>

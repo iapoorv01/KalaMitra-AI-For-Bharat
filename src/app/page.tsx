@@ -10,32 +10,31 @@ import { useEffect, useState } from 'react'
 import { HeartHandshake, PlusIcon } from 'lucide-react'
 import DonateModal from '../components/DonateModal';
 
+const faqData = [
+  {
+    question: "What is KalaMitra?",
+    answer: "KalaMitra is an AI-powered marketplace connecting talented artisans with buyers worldwide. We celebrate India's cultural heritage by helping artisans showcase their handcrafted products while offering buyers an immersive shopping experience with 3D virtual stalls, AR product visualization, and AI-assisted search."
+  },
+  {
+    question: "How do I buy products on KalaMitra?",
+    answer: "Simply browse our marketplace, use voice or text search in any Indian language, and explore products. You can view items in AR, read artisan stories, add products to your cart, and checkout securely. Our AI Shopping Assistant is always available to help you find exactly what you're looking for."
+  },
+  {
+    question: "How can artisans sell on KalaMitra?",
+    answer: "Sign up as a seller, create your personalized virtual stall, and start listing products. Use our AI tools to enhance photos, generate descriptions, and create compelling stories. You can also run auctions, post reels, collaborate with other artisans, and track your performance through detailed analytics—all for free."
+  },
+  {
+    question: "What makes KalaMitra different from other marketplaces?",
+    answer: "KalaMitra uniquely combines tradition with technology. We offer 3D virtual bazaars, AR product previews, voice search in multiple Indian languages, AI-powered shopping assistance, story narration for products, custom craft requests, and direct chat with artisans. Every feature is designed to preserve cultural heritage while empowering artisans."
+  },
+  {
+    question: "Is KalaMitra free to use?",
+    answer: "Yes! Creating an account, browsing products, and listing items as a seller is completely free. We support multiple Indian languages, provide AI tools for sellers at no cost, and charge no upfront fees. Our mission is to make authentic handcrafted art accessible to everyone."
+  }
+];
+
 function FaqCustomAccordion() {
   const [openItem, setOpenItem] = useState<string | null>("item-0");
-  const { t } = useTranslation();
-
-  const faqData = [
-    {
-      question: t('home.faq.q1', "What is KalaMitra?"),
-      answer: t('home.faq.a1', "KalaMitra is an AI-powered marketplace connecting talented artisans with buyers worldwide...")
-    },
-    {
-      question: t('home.faq.q2', "How do I buy products on KalaMitra?"),
-      answer: t('home.faq.a2', "Simply browse our marketplace, use voice or text search...")
-    },
-    {
-      question: t('home.faq.q3', "How can artisans sell on KalaMitra?"),
-      answer: t('home.faq.a3', "Sign up as a seller, create your personalized virtual stall...")
-    },
-    {
-      question: t('home.faq.q4', "What makes KalaMitra different from other marketplaces?"),
-      answer: t('home.faq.a4', "KalaMitra uniquely combines tradition with technology...")
-    },
-    {
-      question: t('home.faq.q5', "Is KalaMitra free to use?"),
-      answer: t('home.faq.a5', "Yes! Creating an account, browsing products...")
-    }
-  ];
 
   const toggleItem = (value: string) => {
     setOpenItem(openItem === value ? null : value);
@@ -413,9 +412,9 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right Side - Visual (5 cols) */}
-            <div className="md:col-span-5 animate-slide-in-up animate-delay-300 order-1 md:order-2 flex justify-center md:justify-end">
-              <div className="relative w-full max-w-sm aspect-square flex items-center justify-center rounded-3xl shadow-2xl bg-[#fdfbf7] dark:bg-[var(--card)] border-8 border-white dark:border-[var(--border)]">
+            {/* Right Side - Visual */}
+            <div className="animate-slide-in-up animate-delay-300">
+              <div className="relative aspect-square flex items-center justify-center rounded-3xl shadow-2xl bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 dark:from-blue-900/30 dark:via-purple-900/30 dark:to-pink-900/30">
                 <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
                   <iframe
                     width="100%"
@@ -429,13 +428,11 @@ export default function Home() {
                     frameBorder="0"
                   ></iframe>
                 </div>
-                <div style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'auto' }} className="rounded-2xl bg-transparent ring-1 ring-[#b08d55]/20" />
-                {/* Decorative Frame Elements */}
-                <div className="absolute -top-6 -right-6 w-12 h-12 bg-[#b08d55] rounded-full opacity-20 blur-xl"></div>
-                <div className="absolute -bottom-6 -left-6 w-12 h-12 bg-[#3d0000] rounded-full opacity-20 blur-xl"></div>
-                {/* Corner Accents */}
-                <div className="absolute top-4 right-4 w-4 h-4 border-t-2 border-r-2 border-[#b08d55]/50 rounded-tr-md"></div>
-                <div className="absolute bottom-4 left-4 w-4 h-4 border-b-2 border-l-2 border-[#b08d55]/50 rounded-bl-md"></div>
+                <div style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'auto' }} className="rounded-2xl bg-transparent" />
+                {/* Decorative Elements */}
+                <div className="absolute -top-4 -right-4 w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full opacity-60"></div>
+                <div className="absolute -bottom-4 -left-4 w-6 h-6 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full opacity-60"></div>
+                <div className="absolute top-1/2 -left-6 w-4 h-4 bg-gradient-to-br from-pink-400 to-red-400 rounded-full opacity-60"></div>
               </div>
             </div>
           </div>
@@ -655,7 +652,7 @@ export default function Home() {
         <div className="container-custom relative z-10">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold font-serif mb-6 text-transparent bg-clip-text bg-gradient-to-r from-[var(--heritage-gold)] to-[var(--heritage-red)] animate-slide-in-up">
-              {t('home.faq.title', "Frequently Asked Questions")}
+              Frequently Asked Questions
             </h2>
             <div className="w-24 h-1 bg-gradient-to-r from-[var(--heritage-gold)] to-[var(--heritage-red)] mx-auto rounded-full"></div>
           </div>
