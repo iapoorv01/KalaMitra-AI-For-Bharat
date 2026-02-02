@@ -85,7 +85,7 @@ export default function AuctionsPage() {
         <div className="container-custom relative z-10 text-center">
           <h1 className="text-4xl md:text-5xl font-serif font-bold text-[#b08d55] mb-4 drop-shadow-md">{t('auctions.title', 'Heritage Auctions')}</h1>
           <p className="text-lg text-white/80 max-w-2xl mx-auto font-light">
-            {t('auctions.subtitle', 'Bid on exclusive, handcrafted masterpieces directly from artisans. Own a piece of history.')}
+            Bid on exclusive, handcrafted masterpieces directly from artisans. Own a piece of history.
           </p>
         </div>
       </div>
@@ -102,14 +102,13 @@ export default function AuctionsPage() {
                 auction={a}
                 title={auctionTitle}
                 currentPrice={highestBid}
-                t={t}
               />
             )
           })}
           {auctions.length === 0 && (
             <div className="col-span-full text-center py-20 text-[var(--muted)]">
               <Hammer className="w-16 h-16 mx-auto mb-4 opacity-20" />
-              <p className="text-xl">{t('auctions.noActive', 'No active auctions at the moment. Check back soon!')}</p>
+              <p className="text-xl">No active auctions at the moment. Check back soon!</p>
             </div>
           )}
         </div>
@@ -118,17 +117,11 @@ export default function AuctionsPage() {
   )
 }
 
-type TranslationFunction = ReturnType<typeof useTranslation>['t'];
-
-function AuctionCard({ auction, title, currentPrice, t }: { auction: AuctionRow, title: string, currentPrice: number, t: TranslationFunction }) {
+function AuctionCard({ auction, title, currentPrice }: { auction: AuctionRow, title: string, currentPrice: number }) {
   // Use current time to trigger re-renders for status calculation
-  // Initialize with null to prevent hydration mismatch (server time != client time)
-  const [now, setNow] = useState<number | null>(null);
+  const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
-    // Set initial time on mount
-    setNow(Date.now());
-
     // Sync with client clock every second
     const interval = setInterval(() => {
       setNow(Date.now());
@@ -147,15 +140,9 @@ function AuctionCard({ auction, title, currentPrice, t }: { auction: AuctionRow,
   const explicitStatus = auction.status?.toLowerCase().trim();
   const isExplicitlyActive = explicitStatus === 'running' || explicitStatus === 'upcoming' || explicitStatus === 'active';
 
-  // 0. Loading/Hydration State
-  if (now === null) {
-    status = 'loading';
-    timerDisplay = '...';
-  }
-  // 1. Explicitly Ended
-  else if (explicitStatus && !isExplicitlyActive) {
+  if (explicitStatus && !isExplicitlyActive) {
     status = 'ended';
-    timerDisplay = t('auctions.auctionEnded', 'Auction Ended');
+    timerDisplay = 'Auction Ended';
   }
   // 2. Not started yet?
   else if (now < start) {
@@ -164,22 +151,19 @@ function AuctionCard({ auction, title, currentPrice, t }: { auction: AuctionRow,
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hrs = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-    const startsInLabel = t('auctions.startsIn', 'Starts in');
-    timerDisplay = days > 0
-      ? `${startsInLabel} ${days}d ${hrs}h`
-      : `${startsInLabel} ${hrs}h ${mins}m`;
+    timerDisplay = days > 0 ? `Starts in ${days}d ${hrs}h` : `Starts in ${hrs}h ${mins}m`;
   }
-  // 3. Past end time? (Only if end exists)
+  // 3. Past end time? (Only if end exists and we are not explicitly 'running' from DB overriding time? 
+  // Usually time happens regardless of status. If time passed, it ends.)
   else if (end !== null && now > end) {
     status = 'ended';
-    timerDisplay = t('auctions.auctionEnded', 'Auction Ended');
+    timerDisplay = 'Auction Ended';
   }
   // 4. Running
   else {
     status = 'running';
     if (end === null) {
-      timerDisplay = t('auctions.ongoing', 'Ongoing');
+      timerDisplay = 'Ongoing';
     } else {
       const diff = end - now;
       const days = Math.floor(diff / (1000 * 60 * 60 * 24));
@@ -203,19 +187,17 @@ function AuctionCard({ auction, title, currentPrice, t }: { auction: AuctionRow,
             className="object-cover transition-transform duration-700 group-hover:scale-110"
           />
         ) : (
-          <div className="flex items-center justify-center h-full text-[var(--muted)]">{t('auctions.noImage', 'No Image')}</div>
+          <div className="flex items-center justify-center h-full text-[var(--muted)]">No Image</div>
         )}
 
         {/* Status Badge */}
         <div className="absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm z-10 backdrop-blur-md bg-white/90">
           {status === 'running' ? (
-            <span className="text-red-600 flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span> {t('auctions.live', 'LIVE')}</span>
+            <span className="text-red-600 flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span> LIVE</span>
           ) : status === 'upcoming' ? (
-            <span className="text-blue-600">{t('auctions.upcoming', 'UPCOMING')}</span>
-          ) : status === 'loading' ? (
-            <span className="text-gray-400">...</span>
+            <span className="text-blue-600">UPCOMING</span>
           ) : (
-            <span className="text-gray-500">{t('auctions.endedStatus', 'ENDED')}</span>
+            <span className="text-gray-500">ENDED</span>
           )}
         </div>
       </div>
@@ -227,11 +209,11 @@ function AuctionCard({ auction, title, currentPrice, t }: { auction: AuctionRow,
 
         <div className="flex items-center justify-between mb-4">
           <div>
-            <p className="text-xs text-[var(--muted)] uppercase tracking-wide">{t('auctions.currentBidLabel', 'Current Bid')}</p>
+            <p className="text-xs text-[var(--muted)] uppercase tracking-wide">Current Bid</p>
             <p className="text-2xl font-bold text-[var(--heritage-red)] dark:text-white">₹{currentPrice.toLocaleString()}</p>
           </div>
           <div className="text-right">
-            <p className="text-xs text-[var(--muted)] uppercase tracking-wide">{t('auctions.timeLeft', 'Time Left')}</p>
+            <p className="text-xs text-[var(--muted)] uppercase tracking-wide">Time Left</p>
             <div className={`text-lg font-mono font-medium flex items-center justify-end gap-1 ${isActive ? 'text-[var(--heritage-brown)] dark:text-[var(--heritage-gold)]' : 'text-gray-400'}`}>
               <Clock className="w-4 h-4" />
               {timerDisplay}
@@ -242,15 +224,15 @@ function AuctionCard({ auction, title, currentPrice, t }: { auction: AuctionRow,
         <div className="mt-auto pt-4 border-t border-[var(--border)]">
           <Link
             href={`/product/${auction.product_id}`}
-            className={`w-full flex items-center justify-center gap-2 py-3 rounded-lg font-bold transition-all shadow-md active:scale-95 ${isActive
-              ? 'bg-[#3d0000] hover:bg-[#590000] text-[#b08d55] dark:bg-[var(--heritage-gold)] dark:text-[#3d0000] dark:hover:bg-white'
-              : 'bg-white border-2 border-[var(--heritage-gold)] text-[var(--heritage-brown)] hover:bg-[var(--heritage-gold)] hover:text-white dark:bg-transparent dark:border-[var(--muted)] dark:text-[var(--muted)] dark:hover:border-[var(--text)] dark:hover:text-[var(--text)]'
+            className={`w-full flex items-center justify-center gap-2 py-3 rounded-lg font-bold transition-colors ${isActive
+                ? 'bg-[#3d0000] hover:bg-[#590000] text-[#b08d55] dark:bg-[var(--heritage-gold)] dark:text-[#3d0000] dark:hover:bg-white'
+                : 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-800'
               }`}
           >
             {isActive ? (
-              <> {t('auctions.placeBid', 'Place Bid')} <Hammer className="w-4 h-4" /></>
+              <>Place Bid <Hammer className="w-4 h-4" /></>
             ) : (
-              <> {t('auctions.viewDetails', 'View Details')} <ExternalLink className="w-4 h-4" /></>
+              <>View Details <ExternalLink className="w-4 h-4" /></>
             )}
           </Link>
         </div>

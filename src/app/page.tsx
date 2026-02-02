@@ -412,9 +412,9 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right Side - Visual */}
-            <div className="animate-slide-in-up animate-delay-300">
-              <div className="relative aspect-square flex items-center justify-center rounded-3xl shadow-2xl bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 dark:from-blue-900/30 dark:via-purple-900/30 dark:to-pink-900/30">
+            {/* Right Side - Visual (5 cols) */}
+            <div className="md:col-span-5 animate-slide-in-up animate-delay-300 order-1 md:order-2 flex justify-center md:justify-end">
+              <div className="relative w-full max-w-sm aspect-square flex items-center justify-center rounded-3xl shadow-2xl bg-[#fdfbf7] dark:bg-[var(--card)] border-8 border-white dark:border-[var(--border)]">
                 <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
                   <iframe
                     width="100%"
@@ -428,11 +428,13 @@ export default function Home() {
                     frameBorder="0"
                   ></iframe>
                 </div>
-                <div style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'auto' }} className="rounded-2xl bg-transparent" />
-                {/* Decorative Elements */}
-                <div className="absolute -top-4 -right-4 w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full opacity-60"></div>
-                <div className="absolute -bottom-4 -left-4 w-6 h-6 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full opacity-60"></div>
-                <div className="absolute top-1/2 -left-6 w-4 h-4 bg-gradient-to-br from-pink-400 to-red-400 rounded-full opacity-60"></div>
+                <div style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'auto' }} className="rounded-2xl bg-transparent ring-1 ring-[#b08d55]/20" />
+                {/* Decorative Frame Elements */}
+                <div className="absolute -top-6 -right-6 w-12 h-12 bg-[#b08d55] rounded-full opacity-20 blur-xl"></div>
+                <div className="absolute -bottom-6 -left-6 w-12 h-12 bg-[#3d0000] rounded-full opacity-20 blur-xl"></div>
+                {/* Corner Accents */}
+                <div className="absolute top-4 right-4 w-4 h-4 border-t-2 border-r-2 border-[#b08d55]/50 rounded-tr-md"></div>
+                <div className="absolute bottom-4 left-4 w-4 h-4 border-b-2 border-l-2 border-[#b08d55]/50 rounded-bl-md"></div>
               </div>
             </div>
           </div>
