@@ -153,19 +153,22 @@
     "no": "নহয়"
   },
   "auctions": {
-    "title": "ঐতিহ্যবাহী নিলাম",
-    "subtitle": "Bid on exclusive, handcrafted masterpieces directly from artisans. Own a piece of history.",
-    "noActive": "No active auctions at the moment. Check back soon!",
-    "status": "স্থিতি",
-    "view": "চাওক",
-    "noImage": "কোনো ছবি নাই",
-    "live": "লাইভ",
-    "upcoming": "আগন্তুক",
-    "endedStatus": "সমাপ্ত",
-    "past": "Past",
-    "noAuctions": "No active auctions",
-    "bidNow": "Bid Now",
-    "viewAuction": "View Auction"
+  "title": "ঐতিহ্য নিলাম",
+  "subtitle": "কাৰিগৰৰ পৰা সোজাকৈ নিৰ্মিত বিশেষ হস্তশিল্প সামগ্ৰীত বিড কৰক। ইতিহাসৰ এটা অংশ আপোনাৰ কৰক।",
+  "noActive": "এই মুহূর্তত কোনো সক্ৰিয় নিলাম নাই। অনুগ্ৰহ কৰি পাছত পুনৰ চাওক!",
+  "status": "স্থিতি",
+  "view": "চাওক",
+  "noImage": "ছবি উপলব্ধ নহয়",
+  "live": "লাইভ",
+  "upcoming": "আগতীয়া",
+  "endedStatus": "সমাপ্ত",
+  "auctionEnded": "নিলাম শেষ হৈছে",
+  "startsIn": "আৰম্ভ হবলৈ বাকী",
+  "ongoing": "চলি আছে",
+  "currentBidLabel": "বৰ্তমান বিড",
+  "timeLeft": "বাকী থকা সময়",
+  "placeBid": "বিড কৰক",
+  "viewDetails": "বিৱৰণ চাওক"
   },
   "profile": {
     "title": "প্ৰ'ফাইল",
@@ -527,19 +530,19 @@
     "orderSummary": "অৰ্ডাৰ সাৰাংশ",
     "free": "মুক্ত",
     "addedSuccess": "পণ্যটো কাৰ্টত সফলভাৱে যোগ কৰা হ'ল!",
-    "addedError": "পণ্যটো কাৰ্টত যোগ কৰিব পৰা নগ'ল।",
-    "addedSuccessTitle": "কাৰ্টত যোগ কৰা হ'ল!",
-    "addedErrorTitle": "কাৰ্টত যোগ কৰিবলৈ ব্যৰ্থ",
-    "viewCart": "কাৰ্ট চাওক",
-    "close": "বন্ধ কৰক",
-    "loginRequired": "আইটেমবোৰ কাৰ্টত যোগ কৰিবলৈ আপুনি ছাইন ইন কৰিব লাগিব।",
-    "quantityUpdated": "কাৰ্টৰ পৰিমাণ আপডেট কৰা হ'ল।",
-    "updateError": "কাৰ্টৰ পৰিমাণ আপডেট কৰিব পৰা নগ'ল।",
-    "removed": "আইটেম কাৰ্টৰ পৰা আতৰোৱা হ'ল।",
-    "removeError": "আইটেম কাৰ্টৰ পৰা আতৰাব পৰা নগ'ল।",
-    "checkoutComingSoon": "চেকআউট অতি সোনকালে আহিব!",
-    "decreaseQuantity": "পৰিমাণ হ্ৰাস কৰক",
-    "increaseQuantity": "পৰিমাণ বৃদ্ধি কৰক"
+  "addedError": "পণ্যটো কাৰ্টত যোগ কৰিব পৰা নগ'ল।",
+  "addedSuccessTitle": "কাৰ্টত যোগ কৰা হ'ল!",
+  "addedErrorTitle": "কাৰ্টত যোগ কৰিবলৈ ব্যৰ্থ",
+  "viewCart": "কাৰ্ট চাওক",
+  "close": "বন্ধ কৰক",
+  "loginRequired": "আইটেমবোৰ কাৰ্টত যোগ কৰিবলৈ আপুনি ছাইন ইন কৰিব লাগিব।",
+  "quantityUpdated": "কাৰ্টৰ পৰিমাণ আপডেট কৰা হ'ল।",
+  "updateError": "কাৰ্টৰ পৰিমাণ আপডেট কৰিব পৰা নগ'ল।",
+  "removed": "আইটেম কাৰ্টৰ পৰা আতৰোৱা হ'ল।",
+  "removeError": "আইটেম কাৰ্টৰ পৰা আতৰাব পৰা নগ'ল।",
+  "checkoutComingSoon": "চেকআউট অতি সোনকালে আহিব!",
+  "decreaseQuantity": "পৰিমাণ হ্ৰাস কৰক",
+  "increaseQuantity": "পৰিমাণ বৃদ্ধি কৰক"
   },
   "dashboard": {
     "title": "ডেশ্ববোৰ্ড",
@@ -648,59 +651,64 @@
     "respondModalCancel": "বাতিল কৰক",
     "respondModalSend": "প্ৰেৰণ কৰক",
     "startByAddingFirst": "প্ৰথম সামগ্ৰী যোগ কৰি আৰম্ভ কৰক",
-    "analyticsShort": {
-      "stallViews30d": "ষ্টল দৰ্শন (৩০ দিন)",
-      "uniqueVisitors30d": "অনন্য দৰ্শক (৩০ দিন)",
-      "topProducts30d": "শীৰ্ষ সামগ্ৰী (৩০ দিন)",
-      "noProductViewsYet": "এতিয়ালৈকে কোনো সামগ্ৰী দৰ্শন নাই",
-      "loading": "এনালাইটিক্স ল'ড হৈ আছে...",
-      "tipsTitle": "পৰামৰ্শসমূহ",
-      "askMoreTips": "অধিক পৰামৰ্শ বিচাৰক",
-      "askPlaceholder": "আপোনাৰ ষ্টল উন্নত কৰাৰ বিষয়ে এটা প্ৰশ্ন সুধক...",
-      "askButton": "সুধক",
-      "thinking": "চিন্তা কৰি আছে..."
-    },
-    "analyticsGuidance": {
-      "audienceEngagingMost": "আপোনাৰ প্ৰেক্ষিতসকলে ইয়াত বেছি জড়িত হৈ আছে: {{titles}}। এই বস্তুবোৰ ফিচাৰ কৰক, বাণ্ডিল সৃষ্টি কৰক, বা একে শ্ৰেণীৰ একে ধৰণৰ টুকুৰাবোৰ প্ৰমোচন কৰক।",
-      "noRecentVisits": "এতিয়ালৈকে কোনো সাম্প্ৰতিক ভিজিট নাই। আপোনাৰ ষ্টল লিংক শ্বেয়াৰ কৰক আৰু আগ্রহ আকৰ্ষণ কৰিবলৈ বিস্তাৰিত ছবি আৰু বিৱৰণ যোগ কৰক।",
-      "viewsStarting": "দৰ্শনবোৰ অহা আৰম্ভ হৈছে। আৱিষ্কাৰ উন্নত কৰিবলৈ স্পষ্ট ফটো আৰু কীৱৰ্ডৰ সৈতে সামগ্ৰীবোৰ আপডেট কৰি ৰাখক।"
-    },
-    "profile": {
-      "title": "ষ্ট'ৰ প্ৰ'ফাইল",
-      "edit": "প্ৰ'ফাইল সম্পাদনা কৰক",
-      "cancel": "বাতিল কৰক",
-      "profileImage": "প্ৰ'ফাইল ছবি",
-      "chooseImage": "ছবি নিৰ্বাচন কৰক",
-      "details": "ষ্ট'ৰৰ বিবৰণ",
-      "fields": {
-        "storeName": {
-          "label": "ষ্ট'ৰৰ নাম",
-          "placeholder": "আপোনাৰ ষ্ট'ৰৰ নাম"
-        },
-        "bio": {
-          "label": "জীৱনী",
-          "placeholder": "আপোনাৰ আৰু আপোনাৰ শিল্পকৰ্মৰ বিষয়ে আমাক কওক..."
-        },
-        "description": {
-          "label": "ষ্ট'ৰ বিৱৰণ",
-          "placeholder": "আপোনাৰ ষ্ট'ৰৰ এটা আকৰ্ষণীয় বিৱৰণ যি আপোনাৰ ষ্টল পৃষ্ঠাত দেখা দিব..."
-        }
-      },
-      "aiGenerate": "এআই জেনেৰেট কৰক",
-      "generating": "জেনেৰেট কৰি আছে...",
-      "saveChanges": "সলনি সংৰক্ষণ কৰক",
-      "saving": "সংৰক্ষণ কৰি আছে...",
-      "notSet": "ছেট কৰা হোৱা নাই",
-      "noBio": "এতিয়ালৈকে কোনো জীৱনী যোগ কৰা হোৱা নাই",
-      "noDescription": "এতিয়ালৈকে কোনো ষ্ট'ৰ বিৱৰণ যোগ কৰা হোৱা নাই",
-      "aiDescriptionTitle": "এআই-শক্তিশালী ষ্ট'ৰ বিৱৰণ",
-      "aiDescriptionHelp": "আপোনাৰ সামগ্ৰী আৰু জীৱনীৰ ওপৰত ভিত্তি কৰি এটা আকৰ্ষণীয় ষ্ট'ৰ বিৱৰণ সৃষ্টি কৰিবলৈ আমাৰ AI ব্যৱহাৰ কৰক। ই আপোনাৰ ষ্টললৈ অধিক গ্ৰাহক আকৰ্ষণ কৰাত সহায় কৰিব!",
-      "loadingProfile": "প্ৰ'ফাইল ল'ড হৈ আছে...",
-      "errors": {
-        "generateDescriptionFailed": "ষ্ট'ৰ বিৱৰণ জেনেৰেট কৰোতে ব্যৰ্থ হ'ল। অনুগ্ৰহ কৰি পুনৰ চেষ্টা কৰক।"
-      }
-    }
+  "analyticsShort": {
+    "stallViews30d": "ষ্টল দৰ্শন (৩০ দিন)",
+    "uniqueVisitors30d": "অনন্য দৰ্শক (৩০ দিন)",
+    "topProducts30d": "শীৰ্ষ সামগ্ৰী (৩০ দিন)",
+    "noProductViewsYet": "এতিয়ালৈকে কোনো সামগ্ৰী দৰ্শন নাই",
+    "loading": "এনালাইটিক্স ল'ড হৈ আছে...",
+    "tipsTitle": "পৰামৰ্শসমূহ",
+    "askMoreTips": "অধিক পৰামৰ্শ বিচাৰক",
+    "askPlaceholder": "আপোনাৰ ষ্টল উন্নত কৰাৰ বিষয়ে এটা প্ৰশ্ন সুধক...",
+    "askButton": "সুধক",
+    "thinking": "চিন্তা কৰি আছে..."
   },
+  "analyticsGuidance": {
+    "audienceEngagingMost": "আপোনাৰ প্ৰেক্ষিতসকলে ইয়াত বেছি জড়িত হৈ আছে: {{titles}}। এই বস্তুবোৰ ফিচাৰ কৰক, বাণ্ডিল সৃষ্টি কৰক, বা একে শ্ৰেণীৰ একে ধৰণৰ টুকুৰাবোৰ প্ৰমোচন কৰক।",
+    "noRecentVisits": "এতিয়ালৈকে কোনো সাম্প্ৰতিক ভিজিট নাই। আপোনাৰ ষ্টল লিংক শ্বেয়াৰ কৰক আৰু আগ্রহ আকৰ্ষণ কৰিবলৈ বিস্তাৰিত ছবি আৰু বিৱৰণ যোগ কৰক।",
+    "viewsStarting": "দৰ্শনবোৰ অহা আৰম্ভ হৈছে। আৱিষ্কাৰ উন্নত কৰিবলৈ স্পষ্ট ফটো আৰু কীৱৰ্ডৰ সৈতে সামগ্ৰীবোৰ আপডেট কৰি ৰাখক।"
+  },
+  "profile": {
+    "title": "ষ্ট'ৰ প্ৰ'ফাইল",
+    "edit": "প্ৰ'ফাইল সম্পাদনা কৰক",
+    "cancel": "বাতিল কৰক",
+    "profileImage": "প্ৰ'ফাইল ছবি",
+    "chooseImage": "ছবি নিৰ্বাচন কৰক",
+    "details": "ষ্ট'ৰৰ বিবৰণ",
+    "fields": {
+      "storeName": {
+        "label": "ষ্ট'ৰৰ নাম",
+        "placeholder": "আপোনাৰ ষ্ট'ৰৰ নাম"
+      },
+      "bio": {
+        "label": "জীৱনী",
+        "placeholder": "আপোনাৰ আৰু আপোনাৰ শিল্পকৰ্মৰ বিষয়ে আমাক কওক..."
+      },
+      "description": {
+        "label": "ষ্ট'ৰ বিৱৰণ",
+        "placeholder": "আপোনাৰ ষ্ট'ৰৰ এটা আকৰ্ষণীয় বিৱৰণ যি আপোনাৰ ষ্টল পৃষ্ঠাত দেখা দিব..."
+      },
+      "upi": {
+  "label": "UPI আইডি",
+  "placeholder": "আপোনাৰ UPI আইডি"
+}
+
+    },
+    "aiGenerate": "এআই জেনেৰেট কৰক",
+    "generating": "জেনেৰেট কৰি আছে...",
+    "saveChanges": "সলনি সংৰক্ষণ কৰক",
+    "saving": "সংৰক্ষণ কৰি আছে...",
+    "notSet": "ছেট কৰা হোৱা নাই",
+    "noBio": "এতিয়ালৈকে কোনো জীৱনী যোগ কৰা হোৱা নাই",
+    "noDescription": "এতিয়ালৈকে কোনো ষ্ট'ৰ বিৱৰণ যোগ কৰা হোৱা নাই",
+    "aiDescriptionTitle": "এআই-শক্তিশালী ষ্ট'ৰ বিৱৰণ",
+    "aiDescriptionHelp": "আপোনাৰ সামগ্ৰী আৰু জীৱনীৰ ওপৰত ভিত্তি কৰি এটা আকৰ্ষণীয় ষ্ট'ৰ বিৱৰণ সৃষ্টি কৰিবলৈ আমাৰ কৃত্ৰিম বুদ্ধিমত্তা ব্যৱহাৰ কৰক। ই আপোনাৰ ষ্টললৈ অধিক গ্ৰাহক আকৰ্ষণ কৰাত সহায় কৰিব!",
+    "loadingProfile": "প্ৰ'ফাইল ল'ড হৈ আছে...",
+    "errors": {
+      "generateDescriptionFailed": "ষ্ট'ৰ বিৱৰণ জেনেৰেট কৰোতে ব্যৰ্থ হ'ল। অনুগ্ৰহ কৰি পুনৰ চেষ্টা কৰক।"
+    }
+  }
+},
   "collaboration": {
     "title": "সহযোগিতাসমূহ",
     "subtitle": "আশ্চৰ্য্যজনক সামগ্ৰী একেলগে সৃষ্টি কৰিবলৈ অন্যান্য শিল্পীসকলৰ সৈতে অংশীদাৰী হৈ পৰক",
@@ -763,21 +771,6 @@
     "statusEnded": "শেষ হ'ল",
     "statusCancelled": "বাতিল কৰা হ'ল"
   },
-  "home": {
-    "faq": {
-      "title": "সঘনাই সোধা প্ৰশ্নসমূহ",
-      "q1": "What is KalaMitra?",
-      "a1": "KalaMitra is an AI-powered marketplace connecting talented artisans with buyers worldwide. We celebrate India's cultural heritage by helping artisans showcase their handcrafted products while offering buyers an immersive shopping experience with 3D virtual stalls, AR product visualization, and AI-assisted search.",
-      "q2": "How do I buy products on KalaMitra?",
-      "a2": "Simply browse our marketplace, use voice or text search in any Indian language, and explore products. You can view items in AR, read artisan stories, add products to your cart, and checkout securely. Our AI Shopping Assistant is always available to help you find exactly what you're looking for.",
-      "q3": "How can artisans sell on KalaMitra?",
-      "a3": "Sign up as a seller, create your personalized virtual stall, and start listing products. Use our AI tools to enhance photos, generate descriptions, and create compelling stories. You can also run auctions, post reels, collaborate with other artisans, and track your performance through detailed analytics—all for free.",
-      "q4": "What makes KalaMitra different from other marketplaces?",
-      "a4": "KalaMitra uniquely combines tradition with technology. We offer 3D virtual bazaars, AR product previews, voice search in multiple Indian languages, AI-powered shopping assistance, story narration for products, custom craft requests, and direct chat with artisans. Every feature is designed to preserve cultural heritage while empowering artisans.",
-      "q5": "Is KalaMitra free to use?",
-      "a5": "Yes! Creating an account, browsing products, and listing items as a seller is completely free. We support multiple Indian languages, provide AI tools for sellers at no cost, and charge no upfront fees. Our mission is to make authentic handcrafted art accessible to everyone."
-    }
-  },
   "footer": {
     "about": "আমাৰ বিষয়ে",
     "contact": "যোগাযোগ",
@@ -792,8 +785,6 @@
     "sitemap": "ছাইটমেপ",
     "newsletter": "বাতৰিপত্ৰ",
     "subscribe": "আমাৰ বাতৰিপত্ৰলৈ সদস্যতা গ্ৰহণ কৰক",
-    "subscribeTitle": "চাবস্ক্ৰাইব",
-    "subscribeBtn": "চাবস্ক্ৰাইব",
     "emailPlaceholder": "আপোনাৰ ইমেইল সন্নিবিষ্ট কৰক",
     "followUs": "আমাক অনুসৰণ কৰক",
     "copyright": "© ২০২৫ কালামিত্ৰ। সকলো অধিকাৰ সংৰক্ষিত।",
@@ -1060,18 +1051,21 @@
     "explore3dBazaar": "3D বজাৰ অন্বেষণ কৰক",
     "leaderboardTitle": "শীৰ্ষ শিল্পী সমৰ্থক",
     "leaderboardDesc": "তেওঁলোকৰ কিনা-বেচাৰ জৰিয়তে পৰম্পৰাগত শিল্পীসকলক সমৰ্থন কৰা আমাৰ আটাইতকৈ নিষ্ঠাবান গ্ৰাহকসকলক চিনাক্ত কৰা।",
+    "donateFloatingButtonTooltip": "এনজিঅ’ বা শিল্পীক সহায় কৰিবলৈ সামগ্ৰী দান কৰক—তেওঁলোকে ইয়াৰ সৰ্বোত্তম ব্যৱহাৰ কৰিব!",
     "faq": {
-      "title": "Frequently Asked Questions",
-      "p1": "Here are some common questions about KalaMitra.",
-      "q1": "What is KalaMitra?",
-      "a1": "KalaMitra is a platform connecting artisans with buyers.",
-      "q2": "How do I buy?",
-      "a2": "Browse the marketplace and click 'Buy Now'.",
-      "q3": "Is it secure?",
-      "a3": "Yes, we use secure payment gateways.",
-      "q4": "Can I return items?",
-      "a4": "Check the return policy on the product page."
-    }
+  "title": "সাধাৰণ প্ৰশ্নসমূহ",
+  "q1": "কলা মিত্ৰ কি?",
+  "a1": "কলা মিত্ৰ হৈছে এটি কৃত্ৰিম বুদ্ধিমত্তা-চালিত বজাৰ যি প্ৰতিভাশালী কাৰিগৰক বিশ্বজুৰি গ্ৰাহকৰ সৈতে সংযোগ কৰে। আমি ভাৰতৰ সাংস্কৃতিক ঐতিহ্য উদযাপন কৰোঁ, কাৰিগৰক তেওঁলোকৰ হস্তনিৰ্মিত সামগ্ৰী প্ৰদৰ্শন কৰাত সহায় কৰি, লগতে গ্ৰাহকক 3D ভাৰ্চুৱেল ষ্টল, AR সামগ্ৰী প্ৰদৰ্শন আৰু কৃত্ৰিম বুদ্ধিমত্তা-সহায়িত অনুসন্ধানৰ জড়িয়তে এক অভিজ্ঞ কেনাকটা অভিজ্ঞতা প্ৰদান কৰোঁ।",
+  "q2": "মই কেনেকৈ কলা মিত্ৰত সামগ্ৃতি কিনিব পাৰোঁ?",
+  "a2": "মাত্‍ আমাৰ বজাৰ চাওক,যিকোনও ভারতিয় ভাষাত ভয়চবা পাঠঅনসন্ধানব্যবহাকি সামগ্রিমউহপর্যলচনাক।আপনি সামগ্রি ARতচবপা,কািগরেরকহিনিপঢ়বপা,সামগ্রিআপনাকাটতযগকরিবপাআথচেকআউটকরিবপা।আমাক\u009d\u009d\u009d\u009d\u009d\u009d\u009d\u009d\u009d\u009d\u009d\u009d\u009d\u009d\u009d\u25a1 \u25a1 \u25a1 \u25a1 \u25a1 \u25a1 \u25a1 \u25a1 \u25a1 \u25a1 \u25a1 \u25a1 \u25a1 \u25a1 \u25a1 \u25a1 \u25a1 \u25a1 \u25a1 \u25a1 \u25a1 \u25a1",
+  "q3": "কািগরেেনেকইলামিত্‍তলেওয়ণ? ",
+  "a3": "বিক্‌রেতাহচছ,আপনিপনিয়ৎবজ‌চ‌টলস‌ষ‌টলস‌ষ‌টলস‌ষ‌টলস‌ষ‌টলস‌ষ‌টলস‌ষ‌টলস‌ষ‌টলস‌ষ‌টলস‌ষ‌টলস‌ষ‌টলস ‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
+  "q4": "কি কথা কলামিত্ৰক আন বজাৰৰ স্থানসমূহৰ পৰা পৃথক কৰে?",
+  "a4": "কলা মিত্ৰ বিশেষকৈ পৰম্পৰা আৰু প্ৰযুক্তি একেলগে মিলে। আমি 3D ভাৰ্চুৱেল বজাৰ, AR সামগ্ৰী পূৰ্বদৰ্শন, একাধিক ভাৰতীয় ভাষাত ভয়চ অনুসন্ধান, কৃত্ৰিম বুদ্ধিমত্তা-চালিত কেনাকটাৰ সহায়, সামগ্ৰীৰ কাহিনী বৰ্ণনা, কাষ্টম হস্তশিল্প অনুৰোধ, আৰু কাৰিগৰৰ সেইতে 3D-ভাৎয়ভাষসমরথন,বিক্‌রেতা-বাবেকথটমউলয়টলপদন,আরকওনওআগ্‌রইমশউলখলওয়ণ।আমা-লকষহইছেসরজন-বাবেপ্‌রকটহস্তশিলপসহজলভয়।",
+  "q5": "কলা মিত্‌পিরি-বজা-ব্যবহা-বিনামউল্য?",
+  "a5": "হয়!একাউণ্টসঃষ্টি,সামগ্‌রিচওকআরবিক্‌রেতা-হিচআপনি-সমগ্‌রি-তালিকভউক্ত-করটওয়ণ-সমপরণ-বিনমউলয়।আমি-একধইকভাৎয়ভাষসমরথন,বিক্‌রেতা-বাবেকথটমউলয়টলপদন,আরকওনওআগ্‌রইমশউলখলওয়ণ।আমা-লকষহইছেসরজন-বাবেপ্‌রকটহস্তশিলপসহজলভয়।"
+}
+
   },
   "brand": {
     "name": "কালামিত্ৰ"
@@ -1323,3 +1317,6 @@
     "contactText": "যোগাযোগ কৰক"
   }
 }
+}
+
+  

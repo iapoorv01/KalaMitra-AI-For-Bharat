@@ -6,9 +6,10 @@ import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { useLanguage } from '@/components/LanguageProvider'
-import { ShoppingCart, LogOut, Menu, X, Palette, Moon, Sun, User, Video, Gift, Heart, LayoutDashboard, Package, Bell } from 'lucide-react'
+import { ShoppingCart, LogOut, Menu, X, Palette, Moon, Sun, User, Video, Gift, Heart, LayoutDashboard, Package } from 'lucide-react'
 import { useTheme } from './ThemeProvider'
 import Leaderboard from './Leaderboard'
+
 
 import { useTranslation } from 'react-i18next';
 import { translateText } from '@/lib/translate';
@@ -459,7 +460,7 @@ export default function Navbar() {
       }
     }
     fetchCartCount();
-    
+
     // Listen for cart changes (for anonymous users via storage events and periodic check)
     let interval: NodeJS.Timeout | null = null;
     if (!user?.id && typeof window !== 'undefined') {
@@ -469,7 +470,7 @@ export default function Navbar() {
       window.addEventListener('storage', handleStorageChange);
       // Also check periodically for changes (in same tab)
       interval = setInterval(fetchCartCount, 1000);
-      
+
       return () => {
         window.removeEventListener('storage', handleStorageChange);
         if (interval) clearInterval(interval);
@@ -560,10 +561,8 @@ export default function Navbar() {
                 <Image src="/kalamitra-symbol.png" alt="KalaMitra Symbol" width={56} height={56} className="object-contain drop-shadow-md" priority />
               </div>
               <span className="text-3xl font-bold heritage-title hidden md:inline" key={`brand-${currentLanguage}`}>{t('brand.name')}</span>
-              {/* Mobile: Show "KM" when signed in, "KalaMitra" when not */}
-              <span id="navbar-brand-mobile" className="text-2xl font-bold heritage-title md:hidden" key={`brand-short-${currentLanguage}`}>
-                {user ? 'KM' : 'KalaMitra'}
-              </span>
+              {/* Mobile text hidden if logo is sufficient, or kept for clarity */}
+              <span id="navbar-brand-mobile" className="text-2xl font-bold heritage-title md:hidden" key={`brand-short-${currentLanguage}`}>KalaMitra</span>
             </Link>
           </div>
 
@@ -651,112 +650,14 @@ export default function Navbar() {
                   <Gift className="w-6 h-6" />
                 </Link>
                 <div className="flex items-center space-x-6">
-                  {/* Notifications Icon (desktop) */}
-                  <div className="relative" ref={notificationsDropdownRef}>
-                    <button
-                      onClick={() => setNotificationsPopupOpen(!notificationsPopupOpen)}
-                      className="p-2 rounded-xl hover:bg-heritage-gold/50 transition-colors relative"
-                      title="Notifications"
-                    >
-                      <Bell className="w-5 h-5 text-[var(--text)]" />
-                      {unreadNotificationsCount > 0 && (
-                        <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center animate-pulse z-10 shadow-lg">{unreadNotificationsCount > 99 ? '99+' : unreadNotificationsCount}</span>
+                  {/* DM Chat Icon (desktop) - opens /dm page directly */}
+                  <div className="relative">
+                    <Link href="/dm" className="p-2 rounded-xl hover:bg-heritage-gold/50" title="Messages">
+                      <MessageCircle className="w-5 h-5 text-[var(--text)]" />
+                      {dmUnreadCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">{dmUnreadCount}</span>
                       )}
-                    </button>
-
-                    {/* Notifications Popup */}
-                    <AnimatePresence>
-                      {notificationsPopupOpen && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                          transition={{ duration: 0.2 }}
-                          className="absolute right-0 mt-2 w-96 z-50 origin-top-right"
-                        >
-                          <div className="bg-[var(--bg-2)]/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-[var(--border)] overflow-hidden">
-                            {/* Header */}
-                            <div className="p-4 border-b border-[var(--border)] bg-[var(--bg-3)]/50 flex items-center justify-between">
-                              <h3 className="font-bold text-[var(--text)]">{t('navbar.notifications') || 'Notifications'}</h3>
-                              <button
-                                onClick={() => setNotificationsPopupOpen(false)}
-                                className="text-[var(--muted)] hover:text-[var(--text)] transition-colors"
-                              >
-                                ×
-                              </button>
-                            </div>
-
-                            {/* Notifications List */}
-                            <div className="max-h-96 overflow-y-auto">
-                              {notificationsLoading ? (
-                                <div className="p-6 text-center">
-                                  <motion.div
-                                    animate={{ rotate: 360 }}
-                                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                                    className="w-5 h-5 border-2 border-[var(--heritage-gold)] border-t-transparent rounded-full mx-auto"
-                                  />
-                                </div>
-                              ) : notifications.length === 0 ? (
-                                <div className="p-6 text-center">
-                                  <Bell className="w-8 h-8 text-[var(--muted)] mx-auto mb-2 opacity-30" />
-                                  <p className="text-xs text-[var(--muted)]">{t('common.noData') || 'No notifications'}</p>
-                                </div>
-                              ) : (
-                                <div className="divide-y divide-[var(--border)]">
-                                  {notifications.map((notif) => (
-                                    <div
-                                      key={notif.id}
-                                      className={`p-4 transition-all duration-200 border-l-4 ${
-                                        notif.read
-                                          ? 'border-l-transparent bg-[var(--bg-1)]'
-                                          : 'border-l-blue-500 bg-[var(--bg-2)]'
-                                      } hover:bg-[var(--bg-3)]`}
-                                    >
-                                      <div className="flex justify-between items-start gap-3">
-                                        <div className="flex-1 min-w-0">
-                                          <h4 className="font-semibold text-sm text-[var(--text)] mb-1">{notif.title}</h4>
-                                          <p className="text-xs text-[var(--muted)] mb-2 line-clamp-2">{notif.body}</p>
-                                          <p className="text-xs text-[var(--muted)]">
-                                            {new Date(notif.created_at).toLocaleString('en-US', {
-                                              month: 'short',
-                                              day: 'numeric',
-                                              hour: '2-digit',
-                                              minute: '2-digit'
-                                            })}
-                                          </p>
-                                        </div>
-                                        {!notif.read && (
-                                          <button
-                                            onClick={() => markNotificationRead(notif.id)}
-                                            className="flex-shrink-0 px-3 py-1 ml-2 bg-blue-500 text-white text-xs rounded-full hover:bg-blue-600 transition-colors shadow"
-                                            title="Mark as read"
-                                          >
-                                            Mark as read
-                                          </button>
-                                        )}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Footer */}
-                            {notifications.length > 0 && (
-                              <div className="p-3 border-t border-[var(--border)] bg-[var(--bg-1)]">
-                                <Link
-                                  href="/notifications"
-                                  className="text-xs font-semibold text-[var(--heritage-gold)] hover:text-[#d4af37] transition-colors block text-center py-2"
-                                  onClick={() => setNotificationsPopupOpen(false)}
-                                >
-                                  {t('common.viewAll') || 'View All Notifications'} →
-                                </Link>
-                              </div>
-                            )}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                    </Link>
                   </div>
 
                   {/* Theme Toggle (Desktop) */}
@@ -903,7 +804,7 @@ export default function Navbar() {
                               <button
                                 onClick={async () => {
                                   setProfileDropdownOpen(false);
-                                  await handleSignOut();
+                                  await signOut();
                                 }}
                                 className="flex items-center space-x-3 w-full px-3 py-2.5 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors group text-sm mt-1"
                               >
@@ -941,7 +842,7 @@ export default function Navbar() {
 
           {/* Mobile theme toggle (visible on small screens) */}
           <div className="md:hidden flex items-center space-x-2">
-            {/* Messages moved to profile page */}
+            {/* DM Chat Icon (mobile) removed; now in menu below */}
             {/* Profile image icon for mobile, always at top left of menu */}
             {user && (
               <Link href="/profile" className="mr-2 flex items-center justify-center">
@@ -991,9 +892,6 @@ export default function Navbar() {
               <button
                 onClick={() => {
                   setIsMenuOpen(!isMenuOpen);
-                  if (!isMenuOpen) {
-                    setShowMobileNotificationDot(false);
-                  }
                 }}
                 className="relative p-3 rounded-2xl text-[var(--text)] hover:text-heritage-gold hover:bg-heritage-gold/50 transition-all duration-300 hover:scale-105"
               >
@@ -1024,6 +922,22 @@ export default function Navbar() {
               >
                 {t('navbar.marketplace')}
               </Link>
+              {/* DM Chat Option (mobile menu) */}
+              {user && (
+                <Link
+                  id="navbar-mobile-dm"
+                  href="/dm"
+                  className="text-[var(--text)] hover:text-heritage-gold transition-all duration-300 font-medium px-6 py-3 hover:bg-heritage-gold/50 rounded-2xl hover:translate-x-2 transform flex items-center gap-2 relative"
+                  onClick={() => setIsMenuOpen(false)}
+                  title={t('navbar.messages')}
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  <span>{t('navbar.messages')}</span>
+                  {dmUnreadCount > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">{dmUnreadCount}</span>
+                  )}
+                </Link>
+              )}
               <Link
                 id="navbar-mobile-auctions"
                 href="/auctions"
@@ -1062,32 +976,18 @@ export default function Navbar() {
                   )}
                   <Link
                     id="navbar-mobile-notifications"
-                    href="/notifications"
+                    href="/profile"
                     className="text-[var(--text)] hover:text-heritage-gold transition-all duration-300 font-medium px-6 py-3 hover:bg-heritage-gold/50 rounded-2xl hover:translate-x-2 transform flex items-center gap-2 relative"
                     onClick={() => {
                       setIsMenuOpen(false);
-                      setShowMobileNotificationDot(false);
                     }}
                   >
-                    <Bell className="w-5 h-5" />
-                    <span>{t('navbar.notifications') || 'Notifications'}</span>
-                    {showMobileNotificationDot && (
-                      <motion.span
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className="ml-auto w-4 h-4 bg-red-600 rounded-full animate-pulse shadow-lg shadow-red-600/50"
-                      />
-                    )}
-                    {unreadNotificationsCount > 0 && !showMobileNotificationDot && (
-                      <span className="ml-auto bg-red-600 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center z-10 shadow-lg">
-                        {unreadNotificationsCount > 99 ? '99+' : unreadNotificationsCount}
-                      </span>
-                    )}
+                    {t('navbar.notifications') || 'Notifications'}
                   </Link>
                   <Link
                     id="navbar-mobile-cart"
                     href="/cart"
-                    className="text-[var(--text)] hover:text-heritage-gold transition-all duration-300 font-medium px-6 py-3 hover:bg-heritage-gold/50 rounded-2xl hover:translate-x-2 transform relative"
+                    className="text-[var(--text)] hover:text-heritage-gold transition-all duration-300 font-medium px-6 py-3 hover:bg-heritage-gold/50 rounded-2xl hover:translate-x-2 transform"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {t('navbar.cart')}

@@ -20,25 +20,16 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang={preferredLang}>
-      <head>
-        <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700;900&display=swap" rel="stylesheet" />
-      </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen heritage-bg`}
-        suppressHydrationWarning
-      >
+    <html lang="en">
+      <body className={inter.className}>
         <AuthProvider>
           <LanguageProvider>
             <ThemeProvider>
-              <div className="flex flex-col min-h-screen">
-                <Navbar />
-                <main className="flex-1">
-                  {children}
-                </main>
-                <Footer />
-              </div>
-              <AIChatConditional />
+              <Navbar />
+              <main className="min-h-screen bg-[var(--bg-1)]">
+                {children}
+              </main>
+              <Footer />
             </ThemeProvider>
           </LanguageProvider>
         </AuthProvider>

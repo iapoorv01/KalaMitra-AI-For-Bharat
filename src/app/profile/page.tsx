@@ -8,14 +8,14 @@ import {
   User, Edit3, Camera, MapPin, Package, Heart, Settings,
   LogOut, ShoppingBag, Truck, CreditCard, Bell, Shield,
   ChevronRight, Calendar, Mail, Phone, Home, Plus, Trash2,
-  CheckCircle, AlertCircle, Search, Filter, X, LayoutDashboard, MessageCircle, Menu
+  CheckCircle, AlertCircle, Search, Filter, X, LayoutDashboard
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 
 // --- Types ---
-type Tab = 'overview' | 'orders' | 'wishlist' | 'addresses' | 'settings' | 'notifications' | 'messages'
+type Tab = 'overview' | 'orders' | 'wishlist' | 'addresses' | 'settings' | 'notifications'
 
 type OrderStatus = 'processing' | 'shipped' | 'delivered' | 'cancelled'
 
@@ -351,30 +351,12 @@ export default function ProfilePage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
 
-          {/* Mobile Sidebar Overlay Backdrop */}
-          {isSidebarOpen && (
-            <div 
-              className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-              onClick={() => setIsSidebarOpen(false)}
-            />
-          )}
-
           {/* --- Sidebar Navigation --- */}
           <aside className={`
-            lg:w-1/4 lg:block lg:relative
-            fixed top-0 left-0 h-full z-50 lg:z-auto w-80 max-w-[85vw]
-            transition-transform duration-300 lg:translate-x-0
-            ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+            lg:w-1/4 lg:block
+            ${isSidebarOpen ? 'block' : 'hidden'}
           `}>
-            <div className="card-glass rounded-2xl p-6 lg:sticky lg:top-24 border border-[var(--border)] h-full lg:h-auto overflow-y-auto">
-              {/* Close button for mobile */}
-              <button
-                onClick={() => setIsSidebarOpen(false)}
-                className="lg:hidden absolute top-4 right-4 p-2 hover:bg-[var(--bg-2)] rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-
+            <div className="card-glass rounded-2xl p-6 sticky top-24 border border-[var(--border)]">
               {/* Mini Profile */}
               <div className="flex flex-col items-center mb-8">
                 <div className="relative mb-4 group">
@@ -407,7 +389,6 @@ export default function ProfilePage() {
                 {profile.role === 'seller' && (
                   <Link
                     href="/dashboard"
-                    onClick={() => setIsSidebarOpen(false)}
                     className="mt-6 w-full flex items-center justify-center gap-2 px-4 py-2 bg-[var(--text)] text-[var(--bg-1)] rounded-xl font-bold text-sm hover:bg-[var(--heritage-gold)] hover:text-white transition-all shadow-md"
                   >
                     <LayoutDashboard className="w-4 h-4" />
@@ -422,7 +403,6 @@ export default function ProfilePage() {
                 <SidebarItem id="orders" icon={Package} label={t('profile.myOrders', { defaultValue: 'Orders' })} />
                 <SidebarItem id="wishlist" icon={Heart} label={t('profile.wishlist', { defaultValue: 'Wishlist' })} />
                 <SidebarItem id="notifications" icon={Bell} label="Notifications" badge={unreadNotifCount} />
-                <SidebarItem id="messages" icon={MessageCircle} label={t('navbar.messages', { defaultValue: 'Messages' })} />
                 <SidebarItem id="addresses" icon={MapPin} label={t('profile.addresses', { defaultValue: 'Addresses' })} />
                 <SidebarItem id="settings" icon={Settings} label={t('profile.settings', { defaultValue: 'Settings' })} />
               </nav>
@@ -441,47 +421,12 @@ export default function ProfilePage() {
 
           {/* --- Main Content --- */}
           <main className="flex-1 min-w-0">
-            {/* Mobile Menu Toggle Button */}
-            <div className="lg:hidden mb-6">
-              <button
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className="w-full flex items-center justify-between px-6 py-4 card-glass rounded-2xl border border-[var(--border)] hover:bg-[var(--bg-2)] transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  {form.profile_image ? (
-                    <img src={form.profile_image} alt={form.name} className="w-10 h-10 rounded-full object-cover" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-[var(--bg-2)] flex items-center justify-center">
-                      <User className="w-5 h-5 text-[var(--muted)]" />
-                    </div>
-                  )}
-                  <div className="text-left">
-                    <p className="font-semibold text-[var(--text)]">{form.name || 'User'}</p>
-                    <p className="text-xs text-[var(--muted)]">View Profile Menu</p>
-                  </div>
-                </div>
-                <Menu className="w-5 h-5 text-[var(--muted)]" />
-              </button>
-            </div>
-
             {activeTab === 'notifications' && (
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="max-w-3xl">
                 <h2 className="text-2xl font-bold heritage-title mb-6">Notifications</h2>
                 <div className="card-glass rounded-2xl p-6 border border-[var(--border)] min-h-[400px]">
                   <NotificationsList />
                 </div>
-              </motion.div>
-            )}
-            {activeTab === 'messages' && (
-              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="max-w-4xl">
-                <h2 className="text-2xl font-bold heritage-title mb-6">{t('navbar.messages', { defaultValue: 'Messages' })}</h2>
-                <Link href="/dm" className="card-glass rounded-2xl p-6 border border-[var(--border)] min-h-[400px] flex items-center justify-center hover:bg-[var(--bg-2)] transition-colors">
-                  <div className="text-center">
-                    <MessageCircle className="w-12 h-12 text-[var(--heritage-gold)] mx-auto mb-4" />
-                    <p className="text-lg font-semibold text-[var(--text)] mb-2">{t('navbar.messages', { defaultValue: 'Messages' })}</p>
-                    <p className="text-sm text-[var(--muted)]">Click here to view and send messages</p>
-                  </div>
-                </Link>
               </motion.div>
             )}
             {activeTab === 'overview' && (
@@ -870,6 +815,37 @@ export default function ProfilePage() {
                       <span className="font-medium">Promotions</span>
                       <div className="w-10 h-6 bg-[var(--border)] rounded-full relative cursor-pointer"><div className="w-4 h-4 bg-white rounded-full absolute left-1 top-1"></div></div>
                     </div>
+                  </div>
+                  <div className="space-y-4">
+                    {orders.slice(0, 2).map(order => (
+                      <div key={order.id} className="flex items-center justify-between p-4 bg-[var(--bg-2)]/50 rounded-xl border border-[var(--border)]">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-[var(--bg-3)] rounded-lg flex items-center justify-center">
+                            <Package className="w-6 h-6 text-[var(--muted)]" />
+                          </div>
+                          <div>
+                            <p className="font-bold text-sm">{order.items[0].name} {order.items.length > 1 && `+${order.items.length - 1} more`}</p>
+                            <p className="text-xs text-[var(--muted)]">Ordered on {order.date}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold">₹{order.total}</p>
+                          <StatusBadge status={order.status} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {activeTab === 'orders' && (
+              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold heritage-title">My Orders</h2>
+                  <div className="flex gap-2">
+                    <button className="p-2 rounded-lg bg-[var(--bg-2)] border border-[var(--border)]"><Search className="w-4 h-4" /></button>
+                    <button className="p-2 rounded-lg bg-[var(--bg-2)] border border-[var(--border)]"><Filter className="w-4 h-4" /></button>
                   </div>
                 </div>
 

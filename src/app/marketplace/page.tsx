@@ -260,6 +260,51 @@ function MarketplaceContent() {
   const [arImageUrl, setArImageUrl] = useState<string | undefined>(undefined)
   const [arProductType, setArProductType] = useState<'vertical' | 'horizontal'>('vertical')
 
+  // Wishlist state
+  const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set())
+  const [wishlistLoading, setWishlistLoading] = useState(false)
+
+  // Fetch wishlist on mount
+  useEffect(() => {
+    if (profile?.wishlist) {
+      setWishlistIds(new Set(profile.wishlist))
+    }
+  }, [profile])
+
+  const toggleWishlist = async (productId: string) => {
+    if (!user || !profile) {
+      alert(t('common.loginRequired'))
+      return
+    }
+
+    // Optimistic update
+    const isLiked = wishlistIds.has(productId)
+    const newWishlist = new Set(wishlistIds)
+    if (isLiked) {
+      newWishlist.delete(productId)
+    } else {
+      newWishlist.add(productId)
+    }
+    setWishlistIds(newWishlist)
+
+    try {
+      const updatedWishlist = Array.from(newWishlist)
+      const { error } = await supabase
+        .from('profiles')
+        .update({ wishlist: updatedWishlist })
+        .eq('id', user.id)
+
+      if (error) {
+        throw error
+      }
+    } catch (error) {
+      console.error('Error updating wishlist:', JSON.stringify(error, null, 2))
+      // Revert on error
+      setWishlistIds(wishlistIds)
+      alert('Error updating wishlist. Please try again.')
+    }
+  }
+
   // Speech recognition for search input
   const [isListening, setIsListening] = useState(false)
   const recognitionRef = useRef<SpeechRecognition | null>(null)
@@ -1064,7 +1109,7 @@ function MarketplaceContent() {
               onClick={() => setShowCollaborativeOnly(!showCollaborativeOnly)}
               className={`px-4 py-2 rounded-lg font-medium transition-transform duration-200 ease-out transform will-change-transform flex items-center gap-2 shadow-sm hover:-translate-y-3.5 hover:scale-[1.02] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-orange-200 ${showCollaborativeOnly
                 ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-md border-yellow-500'
-                : 'bg-white hover:border-gray-400 dark:hover:border-gray-500'
+                : 'bg-[var(--bg-2)] text-[var(--text)] border-[var(--border)] hover:bg-[var(--bg-3)]'
                 }`}
               aria-pressed={showCollaborativeOnly}
             >
@@ -1074,7 +1119,7 @@ function MarketplaceContent() {
               onClick={() => setShowVirtualOnly(!showVirtualOnly)}
               className={`px-4 py-2 rounded-lg font-medium transition-transform duration-200 ease-out transform will-change-transform flex items-center gap-2 shadow-sm hover:-translate-y-3.5 hover:scale-[1.02] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-cyan-200 ${showVirtualOnly
                 ? 'bg-gradient-to-r from-cyan-400 to-teal-500 text-white shadow-md border-cyan-500'
-                : 'bg-white hover:border-gray-400 dark:hover:border-gray-500'
+                : 'bg-[var(--bg-2)] text-[var(--text)] border-[var(--border)] hover:bg-[var(--bg-3)]'
                 }`}
               aria-pressed={showVirtualOnly}
             >
@@ -1094,7 +1139,7 @@ function MarketplaceContent() {
           {filteredProducts.length === 0 ? (
             <div className="text-center py-12">
               <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg">{t('marketplace.noProducts')}</p>
+              <p className="text-[var(--muted)] text-lg">{t('marketplace.noProducts')}</p>
               <p className="text-gray-400">{t('marketplace.noProductsDescription')}</p>
             </div>
           ) : (
@@ -1105,7 +1150,7 @@ function MarketplaceContent() {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
-                  className={`bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-200 hover:scale-105 flex flex-col h-full`}
+                  className={`bg-[var(--card)] rounded-lg border border-[var(--border)] overflow-hidden hover:shadow-lg transition-all duration-200 hover:scale-105 flex flex-col h-full`}
                 >
                   <Link href={`/product/${product.id}`}>
                     <div className="relative h-48 bg-[var(--bg-3)] flex items-center justify-center overflow-hidden">
@@ -1147,11 +1192,11 @@ function MarketplaceContent() {
                   </Link>
                   <div className="p-4 flex flex-col flex-grow">
                     <Link href={`/product/${product.id}`}>
-                      <h3 className="font-semibold text-gray-900 mb-2 hover:text-orange-600 transition-colors line-clamp-1">
+                      <h3 className="font-semibold text-[var(--text)] mb-2 hover:text-orange-600 transition-colors line-clamp-1">
                         {displayProducts.find(p => p.id === product.id)?.title || product.title}
                       </h3>
                     </Link>
-                    <p className="text-sm text-gray-600 mb-2 line-clamp-1">{displayProducts.find(p => p.id === product.id)?.category || product.category}</p>
+                    <p className="text-sm text-[var(--muted)] mb-2 line-clamp-1">{displayProducts.find(p => p.id === product.id)?.category || product.category}</p>
                     {/* Show collaborators or single seller */}
                     {product.isCollaborative && product.collaborators && product.collaborators.length > 0 ? (
                       <div className="text-xs mb-3 p-3 rounded-md border border-yellow-200/90 dark:border-yellow-700/30 shadow-sm">
@@ -1165,7 +1210,7 @@ function MarketplaceContent() {
                         </div>
                       </div>
                     ) : (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-3 line-clamp-1">
+                      <p className="text-xs text-[var(--muted)] mb-3 line-clamp-1">
                         {(() => {
                           const sellerName = product.seller?.name || ''
                           const translatedName = translatedSellerNames[sellerName] || sellerName
@@ -1177,7 +1222,7 @@ function MarketplaceContent() {
                     )}
 
                     {/* Price and Actions - Anchored to bottom */}
-                    <div className="mt-auto flex items-center justify-between pt-2 border-t border-gray-100">
+                    <div className="mt-auto flex items-center justify-between pt-2 border-t border-[var(--border)]">
                       <p className="text-lg font-bold text-orange-600 dark:text-orange-400">₹{product.price}</p>
                       <div className="flex space-x-2">
                         {/* Voice narration button */}
