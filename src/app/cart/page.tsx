@@ -189,6 +189,10 @@ export default function CartPage() {
         const productId = item.product_id
         updateAnonymousCartQuantity(productId, newQuantity)
       }
+      
+      // Dispatch custom event to immediately update cart count in navbar
+      window.dispatchEvent(new CustomEvent('cartUpdated'));
+      
       setFeedback(t('cart.quantityUpdated'))
       await fetchCartItems()
     } catch (error) {
@@ -215,6 +219,10 @@ export default function CartPage() {
         const productId = item.product_id
         removeFromAnonymousCart(productId)
       }
+      
+      // Dispatch custom event to immediately update cart count in navbar
+      window.dispatchEvent(new CustomEvent('cartUpdated'));
+      
       setFeedback(t('cart.removed'))
       await fetchCartItems()
     } catch (error) {
@@ -260,6 +268,10 @@ export default function CartPage() {
         // Anonymous
         addToAnonymousCart(product.product_id, 1)
       }
+      
+      // Dispatch custom event to immediately update cart count in navbar
+      window.dispatchEvent(new CustomEvent('cartUpdated'));
+      
       setFeedback(t('cart.addedFromWishlist', { defaultValue: 'Added to cart' }))
       await fetchCartItems()
     } catch (error) {
@@ -573,7 +585,7 @@ export default function CartPage() {
                 })
 
                 return (
-                  <div key={item.product_id} className="group bg-[var(--bg-2)] border border-[var(--border)] p-4 flex flex-col">
+                  <div key={item.id} className="group bg-[var(--bg-2)] border border-[var(--border)] p-4 flex flex-col">
                     <Link href={`/product/${item.product_id}`} className="block relative aspect-square bg-[var(--bg-3)] mb-4 overflow-hidden">
                       {item.image_url ? (
                         <img src={item.image_url} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />

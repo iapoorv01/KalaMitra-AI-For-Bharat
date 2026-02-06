@@ -900,6 +900,9 @@ function MarketplaceContent() {
         addToAnonymousCart(productId, 1)
         setCartStatus('success');
         setCartMessage(t('cart.addedSuccess'));
+        
+        // Dispatch custom event to immediately update cart count in navbar
+        window.dispatchEvent(new CustomEvent('cartUpdated'));
         setCartModalOpen(true);
         return;
       }
