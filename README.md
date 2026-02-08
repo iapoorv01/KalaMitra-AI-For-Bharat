@@ -279,6 +279,8 @@ KalaMitra/
 │   │   │   └── page.tsx
 │   │   ├── contact/
 │   │   │   └── page.tsx
+│   │   ├── wishlist/
+│   │   │   └── page.tsx
 │   ├── components/
 │   │   ├── AIChatConditional.tsx
 │   │   ├── AIProductForm.tsx
