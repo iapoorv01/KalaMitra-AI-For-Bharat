@@ -1,20 +1,18 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { MessageCircle } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
-import DMChat from './DMChat'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
+import { supabase } from '@/lib/supabase'
 import { useLanguage } from '@/components/LanguageProvider'
-import { ShoppingCart, LogOut, Menu, X, Palette, Bell, Moon, Sun, User, Video, Gift } from 'lucide-react'
+import { ShoppingCart, LogOut, Menu, X, Palette, Moon, Sun, User, Video, Gift, Heart, LayoutDashboard, Package, Bell } from 'lucide-react'
 import { useTheme } from './ThemeProvider'
 import Leaderboard from './Leaderboard'
-import { supabase } from '@/lib/supabase'
 
-import NotificationsList from '@/components/NotificationsList'
 import { useTranslation } from 'react-i18next';
 import { translateText } from '@/lib/translate';
+import Image from 'next/image';
 import '@/lib/i18n';
 
 export default function Navbar() {
@@ -79,10 +77,6 @@ export default function Navbar() {
           intro: '<span style="font-size:1.1em">🎁 <b>Gifts</b></span><br/>Send and receive gifts.'
         },
         {
-          element: 'a[href="/dm"]',
-          intro: '<span style="font-size:1.1em">💬 <b>Messages</b></span><br/>Chat with other users.'
-        },
-        {
           element: 'button[aria-label="Toggle theme"]',
           intro: '<span style="font-size:1.1em">🌗 <b>Theme</b></span><br/>Switch between light and dark mode.'
         },
@@ -123,13 +117,13 @@ export default function Navbar() {
               doneLabel: '✨ Done',
               skipLabel: 'Skip',
             })
-            .oncomplete(() => {
-              localStorage.setItem('hasSeenKalaMitraNavbarIntro', 'true');
-            })
-            .onexit(() => {
-              localStorage.setItem('hasSeenKalaMitraNavbarIntro', 'true');
-            })
-            .start();
+              .oncomplete(() => {
+                localStorage.setItem('hasSeenKalaMitraNavbarIntro', 'true');
+              })
+              .onexit(() => {
+                localStorage.setItem('hasSeenKalaMitraNavbarIntro', 'true');
+              })
+              .start();
           } else {
             setTimeout(checkAllTargets, 100);
           }
@@ -145,79 +139,177 @@ export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [translatedName, setTranslatedName] = useState('');
-  const [notifOpen, setNotifOpen] = useState(false);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
   const [mitraPoints, setMitraPoints] = useState<number | null>(null);
-  // DM Drawer modal state
-  const [dmDrawerOpen, setDmDrawerOpen] = useState(false);
-  // Selected thread and user for DMChat
-  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
-  const [selectedOtherUser, setSelectedOtherUser] = useState<{ id: string; name: string; profile_image?: string } | null>(null);
-  // DM thread type
-  type DMThread = {
-    id: string;
-    participants: { id: string; name: string; profile_image?: string }[];
-    unreadCount?: number;
-  };
-  // Poll for unread DM count every 5s
-  useEffect(() => {
-    async function fetchUnreadDMs() {
-      if (!user?.id) {
-        setDmUnreadCount(0);
-        return;
-      }
-      try {
-        const res = await fetch('/api/chat/threads?userId=' + user.id);
-        const json = await res.json();
-        const threads: DMThread[] = json.threads || [];
-        const unread = threads.reduce((acc: number, thread) => acc + (thread.unreadCount || 0), 0);
-        setDmUnreadCount(unread);
-      } catch {
-        setDmUnreadCount(0);
-      }
-    }
-    fetchUnreadDMs();
-  }, [user?.id]);
   const [hasLiveAuctions, setHasLiveAuctions] = useState(false)
   const { i18n, t } = useTranslation();
-  // ...existing code...
-  // DM threads state for drawer
-  const [dmThreads, setDmThreads] = useState<DMThread[]>([]);
-  const [dmLoading, setDmLoading] = useState(false);
-  const [dmError, setDmError] = useState<string | null>(null);
-  // Unread DM count for badge
-  const [dmUnreadCount, setDmUnreadCount] = useState(0);
+  // Unread notifications count
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+  // Notifications popup state
+  const [notificationsPopupOpen, setNotificationsPopupOpen] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const notificationsDropdownRef = useRef<HTMLDivElement>(null);
+  // New notification toast
+  const [newNotificationToast, setNewNotificationToast] = useState<{ title: string; body: string } | null>(null);
+  // Mobile notification indicator - red dot for new notifications
+  const [showMobileNotificationDot, setShowMobileNotificationDot] = useState(false);
 
-  // Fetch DM threads when drawer opens
+  // Fetch unread notifications count and subscribe to real-time updates
   useEffect(() => {
-    if (dmDrawerOpen && user?.id) {
-      fetchDMThreads();
-    }
-  }, [dmDrawerOpen, user?.id]);
-
-  async function fetchDMThreads() {
-    setDmLoading(true);
-    setDmError(null);
-    if (!user) {
-      setDmLoading(false);
+    if (!user?.id) {
+      setUnreadNotificationsCount(0);
       return;
     }
-    try {
-      const res = await fetch('/api/chat/threads?userId=' + user.id);
-      const json = await res.json();
-      const threads: DMThread[] = json.threads || [];
-      setDmThreads(threads);
-      // Count unread messages
-      const unread = threads.reduce((acc: number, thread) => acc + (thread.unreadCount || 0), 0);
-      setDmUnreadCount(unread);
-    } catch (err) {
-      setDmError('Failed to load chats');
+
+    const fetchUnreadNotifications = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('notifications')
+          .select('id', { count: 'exact' })
+          .eq('user_id', user.id)
+          .eq('read', false);
+        if (error) throw error;
+        const unreadCount = data?.length || 0;
+        setUnreadNotificationsCount(unreadCount);
+        // Show mobile red dot if there are unread notifications
+        if (unreadCount > 0 && !showMobileNotificationDot) {
+          setShowMobileNotificationDot(true);
+        }
+      } catch (err) {
+        console.error('Error fetching unread notifications:', err);
+      }
+    };
+
+    fetchUnreadNotifications();
+
+    // Subscribe to real-time notifications
+    const channel = supabase
+      .channel(`notifications:${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload: any) => {
+          // Show toast for new notification
+          if (payload.new) {
+            setNewNotificationToast({
+              title: payload.new.title,
+              body: payload.new.body,
+            });
+            // Show mobile red dot indicator
+            setShowMobileNotificationDot(true);
+            // Auto-hide toast after 5 seconds
+            setTimeout(() => setNewNotificationToast(null), 5000);
+            
+            // Immediately increment count if the new notification is unread
+            if (!payload.new.read) {
+              setUnreadNotificationsCount(prev => prev + 1);
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [user?.id]);
+
+  // Fetch notifications when popup opens
+  useEffect(() => {
+    if (!notificationsPopupOpen || !user?.id) return;
+
+    const fetchNotifications = async () => {
+      setNotificationsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('notifications')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(10);
+        if (error) throw error;
+        setNotifications(data || []);
+      } catch (err) {
+        console.error('Error fetching notifications:', err);
+        setNotifications([]);
+      } finally {
+        setNotificationsLoading(false);
+      }
+    };
+
+    fetchNotifications();
+
+    // Subscribe to real-time notification updates
+    const channel = supabase
+      .channel(`notifications-popup:${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload: any) => {
+          // Refetch after a small delay to ensure data consistency
+          setTimeout(() => {
+            fetchNotifications();
+          }, 100);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [notificationsPopupOpen, user?.id]);
+
+  // Close notifications popup when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        notificationsDropdownRef.current &&
+        !notificationsDropdownRef.current.contains(event.target as Node)
+      ) {
+        setNotificationsPopupOpen(false);
+      }
+    };
+
+    if (notificationsPopupOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
     }
-    setDmLoading(false);
-  }
+  }, [notificationsPopupOpen]);
+
+  const markNotificationRead = async (notificationId: string) => {
+    try {
+      await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('id', notificationId);
+      // Refetch notifications
+      const { data } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      setNotifications(data || []);
+    } catch (err) {
+      console.error('Error marking notification as read:', err);
+    }
+  };
+
   const languages = [
     { code: 'en', label: 'English', flag: '🇬🇧' },
     { code: 'hi', label: 'हिंदी', flag: '🇮🇳' },
@@ -266,30 +358,14 @@ export default function Navbar() {
     }
   }, [profileDropdownOpen])
 
-  // Poll for live auctions every 30s and notifications every 5s for real-time badge
-  // Track if new notification arrived since last open
-  const [hasNewNotif, setHasNewNotif] = useState(false);
+  // Poll for live auctions every 30s
   useEffect(() => {
     fetchLiveAuctions();
     const auctionIv = setInterval(() => {
       fetchLiveAuctions();
     }, 30000);
-    let notifIv: NodeJS.Timeout | null = null;
-    let lastUnreadCount = unreadCount;
-    if (user?.id) {
-      fetchUnread(user.id);
-      notifIv = setInterval(async () => {
-        await fetchUnread(user.id);
-        // If unreadCount increases, set hasNewNotif true
-        if (unreadCount > lastUnreadCount) {
-          setHasNewNotif(true);
-        }
-        lastUnreadCount = unreadCount;
-      }, 5000);
-    }
     return () => {
       clearInterval(auctionIv);
-      if (notifIv) clearInterval(notifIv);
     };
   }, [user?.id]);
 
@@ -338,19 +414,7 @@ export default function Navbar() {
     return () => { mounted = false }
   }, [user?.id])
 
-  const fetchUnread = async (uid?: string | null) => {
-    if (!uid) return setUnreadCount(0);
-    try {
-      const { count } = await supabase.from('notifications').select('*', { count: 'exact', head: true }).eq('user_id', uid).eq('read', false);
-      // If unreadCount increases, set hasNewNotif true
-      if (typeof count === 'number' && count > unreadCount) {
-        setHasNewNotif(true);
-      }
-      setUnreadCount(count || 0);
-    } catch (err) {
-      console.error('failed fetch unread', err);
-    }
-  };
+
 
   const fetchLiveAuctions = async () => {
     try {
@@ -362,7 +426,7 @@ export default function Navbar() {
     }
   }
 
-    // Cart item count state
+  // Cart item count state
   const [cartCount, setCartCount] = useState(0);
   useEffect(() => {
     async function fetchCartCount() {
@@ -388,22 +452,57 @@ export default function Navbar() {
       }
     }
     fetchCartCount();
-    
-    // Listen for cart changes (for anonymous users via storage events and periodic check)
-    let interval: NodeJS.Timeout | null = null;
+
+    // Poll for cart changes every 2 seconds for both logged-in and anonymous users
+    const interval = setInterval(fetchCartCount, 2000);
+
+    // Listen for custom cartUpdated event for immediate updates
+    const handleCartUpdate = () => {
+      fetchCartCount();
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('cartUpdated', handleCartUpdate);
+    }
+
+    // Listen for storage events (for anonymous users in different tabs)
+    let handleStorageChange: (() => void) | null = null;
     if (!user?.id && typeof window !== 'undefined') {
-      const handleStorageChange = () => {
+      handleStorageChange = () => {
         fetchCartCount();
       };
       window.addEventListener('storage', handleStorageChange);
-      // Also check periodically for changes (in same tab)
-      interval = setInterval(fetchCartCount, 1000);
-      
-      return () => {
-        window.removeEventListener('storage', handleStorageChange);
-        if (interval) clearInterval(interval);
-      };
     }
+
+    // Subscribe to real-time cart changes for logged-in users
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    if (user?.id) {
+      channel = supabase
+        .channel(`cart:${user.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'cart',
+            filter: `buyer_id=eq.${user.id}`,
+          },
+          () => {
+            fetchCartCount();
+          }
+        )
+        .subscribe();
+    }
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('cartUpdated', handleCartUpdate);
+      if (handleStorageChange) {
+        window.removeEventListener('storage', handleStorageChange);
+      }
+      if (channel) {
+        channel.unsubscribe();
+      }
+    };
   }, [user?.id]);
 
   // Prevent hydration mismatch by showing consistent structure during loading
@@ -414,48 +513,48 @@ export default function Navbar() {
           <div className="flex justify-between items-center py-4">
             {/* Logo placeholder */}
             <div className="flex items-center space-x-4 group">
-              <div className="w-12 h-12 bg-gradient-to-br from-[var(--heritage-gold)] to-[var(--heritage-gold)] rounded-2xl flex items-center justify-center">
-                <Palette className="w-6 h-6 text-white" />
+              <div className="relative w-14 h-14 flex items-center justify-center">
+                <Image src="/kalamitra-symbol.png" alt="KalaMitra Symbol" width={56} height={56} className="object-contain" />
               </div>
               <span className="text-3xl font-bold heritage-title">KalaMitra</span>
             </div>
             {/* navbar placeholder */}
             <div className="hidden md:flex items-center space-x-10">
-            <Link href="/leaderboard" className="p-2 rounded-xl hover:bg-heritage-gold/50">
-              <span className="block w-6 h-6">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-6 h-6">
-                  <defs>
-                    <linearGradient id="trophyGold" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
-                      <stop stopColor="#FFD700" />
-                      <stop offset="1" stopColor="#FFB300" />
-                    </linearGradient>
-                  </defs>
-                  <path d="M7 4V2h10v2h3a1 1 0 0 1 1 1v2c0 3.866-3.134 7-7 7s-7-3.134-7-7V5a1 1 0 0 1 1-1h3z" fill="url(#trophyGold)" stroke="#B8860B" strokeWidth="1.2"/>
-                  <ellipse cx="12" cy="19" rx="5" ry="2.5" fill="#FFF8DC" stroke="#B8860B" strokeWidth="1.1"/>
-                  <rect x="9" y="15" width="6" height="3" rx="1.2" fill="#FFD700" stroke="#B8860B" strokeWidth="1.1"/>
-                  <path d="M4 7c0 2.5 1.5 4.5 4 5.5" stroke="#B8860B" strokeWidth="1.1" fill="none"/>
-                  <path d="M20 7c0 2.5-1.5 4.5-4 5.5" stroke="#B8860B" strokeWidth="1.1" fill="none"/>
-                </svg>
-              </span>
-            </Link>
-            {/* Leaderboard Trophy icon (desktop only) */}
-            <Link href="/leaderboard" className="p-2 rounded-xl hover:bg-heritage-gold/50">
-              <span className="block w-6 h-6">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-6 h-6">
-                  <defs>
-                    <linearGradient id="trophyGold2" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
-                      <stop stopColor="#FFD700" />
-                      <stop offset="1" stopColor="#FFB300" />
-                    </linearGradient>
-                  </defs>
-                  <path d="M7 4V2h10v2h3a1 1 0 0 1 1 1v2c0 3.866-3.134 7-7 7s-7-3.134-7-7V5a1 1 0 0 1 1-1h3z" fill="url(#trophyGold2)" stroke="#B8860B" strokeWidth="1.2"/>
-                  <ellipse cx="12" cy="19" rx="5" ry="2.5" fill="#FFF8DC" stroke="#B8860B" strokeWidth="1.1"/>
-                  <rect x="9" y="15" width="6" height="3" rx="1.2" fill="#FFD700" stroke="#B8860B" strokeWidth="1.1"/>
-                  <path d="M4 7c0 2.5 1.5 4.5 4 5.5" stroke="#B8860B" strokeWidth="1.1" fill="none"/>
-                  <path d="M20 7c0 2.5-1.5 4.5-4 5.5" stroke="#B8860B" strokeWidth="1.1" fill="none"/>
-                </svg>
-              </span>
-            </Link>
+              <Link href="/leaderboard" className="p-2 rounded-xl hover:bg-heritage-gold/50">
+                <span className="block w-6 h-6">
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-6 h-6">
+                    <defs>
+                      <linearGradient id="trophyGold" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                        <stop stopColor="#FFD700" />
+                        <stop offset="1" stopColor="#FFB300" />
+                      </linearGradient>
+                    </defs>
+                    <path d="M7 4V2h10v2h3a1 1 0 0 1 1 1v2c0 3.866-3.134 7-7 7s-7-3.134-7-7V5a1 1 0 0 1 1-1h3z" fill="url(#trophyGold)" stroke="#B8860B" strokeWidth="1.2" />
+                    <ellipse cx="12" cy="19" rx="5" ry="2.5" fill="#FFF8DC" stroke="#B8860B" strokeWidth="1.1" />
+                    <rect x="9" y="15" width="6" height="3" rx="1.2" fill="#FFD700" stroke="#B8860B" strokeWidth="1.1" />
+                    <path d="M4 7c0 2.5 1.5 4.5 4 5.5" stroke="#B8860B" strokeWidth="1.1" fill="none" />
+                    <path d="M20 7c0 2.5-1.5 4.5-4 5.5" stroke="#B8860B" strokeWidth="1.1" fill="none" />
+                  </svg>
+                </span>
+              </Link>
+              {/* Leaderboard Trophy icon (desktop only) */}
+              <Link href="/leaderboard" className="p-2 rounded-xl hover:bg-heritage-gold/50">
+                <span className="block w-6 h-6">
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-6 h-6">
+                    <defs>
+                      <linearGradient id="trophyGold2" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                        <stop stopColor="#FFD700" />
+                        <stop offset="1" stopColor="#FFB300" />
+                      </linearGradient>
+                    </defs>
+                    <path d="M7 4V2h10v2h3a1 1 0 0 1 1 1v2c0 3.866-3.134 7-7 7s-7-3.134-7-7V5a1 1 0 0 1 1-1h3z" fill="url(#trophyGold2)" stroke="#B8860B" strokeWidth="1.2" />
+                    <ellipse cx="12" cy="19" rx="5" ry="2.5" fill="#FFF8DC" stroke="#B8860B" strokeWidth="1.1" />
+                    <rect x="9" y="15" width="6" height="3" rx="1.2" fill="#FFD700" stroke="#B8860B" strokeWidth="1.1" />
+                    <path d="M4 7c0 2.5 1.5 4.5 4 5.5" stroke="#B8860B" strokeWidth="1.1" fill="none" />
+                    <path d="M20 7c0 2.5-1.5 4.5-4 5.5" stroke="#B8860B" strokeWidth="1.1" fill="none" />
+                  </svg>
+                </span>
+              </Link>
               <div className="w-20 h-8 bg-[var(--bg-2)] rounded animate-pulse"></div>
               <div className="w-20 h-8 bg-[var(--bg-2)] rounded animate-pulse"></div>
             </div>
@@ -471,7 +570,7 @@ export default function Navbar() {
     await signOut()
     setIsMenuOpen(false)
   }
- 
+
 
   // Language change handler
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -479,26 +578,29 @@ export default function Navbar() {
   };
 
   return (
-  <nav className="glass-nav border-b border-heritage-gold/40 shadow-soft sticky top-0 z-50 font-display">
-  <div className="container-custom font-display">
-  <div className="flex justify-between items-center py-3">
+    <nav className="glass-nav border-b border-heritage-gold/40 shadow-soft sticky top-0 z-50 font-display">
+      <div className="container-custom font-display">
+        <div className="flex justify-between items-center py-3">
           {/* Logo - Short brand for mobile, full for desktop */}
           <div className="flex items-center space-x-4 group">
             <Link href="/" className="flex items-center space-x-4 group">
-              <div className="w-12 h-12 bg-gradient-to-br from-[var(--heritage-gold)] to-[var(--heritage-red)] rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all duration-500 shadow-medium hover:shadow-glow animate-float-slow border-2 border-heritage-gold">
-                <Palette className="w-6 h-6 text-white" />
+              <div className="relative w-14 h-14 flex items-center justify-center group-hover:scale-110 transition-all duration-500">
+                <Image src="/kalamitra-symbol.png" alt="KalaMitra Symbol" width={56} height={56} className="object-contain drop-shadow-md" priority />
               </div>
               <span className="text-3xl font-bold heritage-title hidden md:inline" key={`brand-${currentLanguage}`}>{t('brand.name')}</span>
-              <span id="navbar-brand-mobile" className="text-3xl font-bold heritage-title md:hidden" key={`brand-short-${currentLanguage}`}>KM</span>
+              {/* Mobile: Show "KM" when signed in, "KalaMitra" when not */}
+              <span id="navbar-brand-mobile" className="text-2xl font-bold heritage-title md:hidden" key={`brand-short-${currentLanguage}`}>
+                {user ? 'KM' : 'KalaMitra'}
+              </span>
             </Link>
           </div>
 
           {/* Desktop navbar */}
           <div className="hidden md:flex items-center space-x-10">
-                      {/* ...existing code... */}
-            <Link 
-              href="/reels" 
-              className="text-[var(--text)] hover:text-heritage-gold transition-all duration-300 font-medium hover:scale-105 transform hover:translate-y-[-2px] relative group flex items-center px-3 py-2" 
+            {/* ...existing code... */}
+            <Link
+              href="/reels"
+              className="text-[var(--text)] hover:text-heritage-gold transition-all duration-300 font-medium hover:scale-105 transform hover:translate-y-[-2px] relative group flex items-center px-3 py-2"
               title="Reels"
             >
               <Video className="w-6 h-6 mr-2" />
@@ -506,8 +608,8 @@ export default function Navbar() {
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-heritage-gold to-heritage-red transition-all duration-300 group-hover:w-full"></span>
             </Link>
 
-            <Link 
-              href="/marketplace" 
+            <Link
+              href="/marketplace"
               className="text-[var(--text)] hover:text-heritage-gold transition-all duration-300 font-medium hover:scale-105 transform hover:translate-y-[-2px] relative group"
             >
               <span className="relative z-10">{t('navbar.marketplace')}</span>
@@ -522,22 +624,22 @@ export default function Navbar() {
                       <stop offset="1" stopColor="#FFB300" />
                     </linearGradient>
                   </defs>
-                  <path d="M7 4V2h10v2h3a1 1 0 0 1 1 1v2c0 3.866-3.134 7-7 7s-7-3.134-7-7V5a1 1 0 0 1 1-1h3z" fill="url(#trophyGold3)" stroke="#B8860B" strokeWidth="1.2"/>
-                  <ellipse cx="12" cy="19" rx="5" ry="2.5" fill="#FFF8DC" stroke="#B8860B" strokeWidth="1.1"/>
-                  <rect x="9" y="15" width="6" height="3" rx="1.2" fill="#FFD700" stroke="#B8860B" strokeWidth="1.1"/>
-                  <path d="M4 7c0 2.5 1.5 4.5 4 5.5" stroke="#B8860B" strokeWidth="1.1" fill="none"/>
-                  <path d="M20 7c0 2.5-1.5 4.5-4 5.5" stroke="#B8860B" strokeWidth="1.1" fill="none"/>
+                  <path d="M7 4V2h10v2h3a1 1 0 0 1 1 1v2c0 3.866-3.134 7-7 7s-7-3.134-7-7V5a1 1 0 0 1 1-1h3z" fill="url(#trophyGold3)" stroke="#B8860B" strokeWidth="1.2" />
+                  <ellipse cx="12" cy="19" rx="5" ry="2.5" fill="#FFF8DC" stroke="#B8860B" strokeWidth="1.1" />
+                  <rect x="9" y="15" width="6" height="3" rx="1.2" fill="#FFD700" stroke="#B8860B" strokeWidth="1.1" />
+                  <path d="M4 7c0 2.5 1.5 4.5 4 5.5" stroke="#B8860B" strokeWidth="1.1" fill="none" />
+                  <path d="M20 7c0 2.5-1.5 4.5-4 5.5" stroke="#B8860B" strokeWidth="1.1" fill="none" />
                 </svg>
               </span>
             </Link>
-            <Link 
-              href="/auctions" 
+            <Link
+              href="/auctions"
               className="text-[var(--text)] hover:text-heritage-gold transition-all duration-300 font-medium hover:scale-105 transform hover:translate-y-[-2px] relative group"
             >
-                <span className="relative z-10">{t('navbar.auctions') || 'Auctions'}</span>
-                {hasLiveAuctions && (
-                  <span className="ml-2 inline-flex items-center px-2 py-0.5 bg-red-600 text-white text-xs font-semibold rounded-full">{t('navbar.live') || 'LIVE'}</span>
-                )}
+              <span className="relative z-10">{t('navbar.auctions') || 'Auctions'}</span>
+              {hasLiveAuctions && (
+                <span className="ml-2 inline-flex items-center px-2 py-0.5 bg-red-600 text-white text-xs font-semibold rounded-full">{t('navbar.live') || 'LIVE'}</span>
+              )}
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-heritage-gold to-heritage-red transition-all duration-300 group-hover:w-full"></span>
             </Link>
             {loading ? (
@@ -549,8 +651,8 @@ export default function Navbar() {
               <>
                 {/* Dashboard only for sellers, no placeholder for buyers */}
                 {profile?.role === 'seller' && (
-                  <Link 
-                    href="/dashboard" 
+                  <Link
+                    href="/dashboard"
                     className="text-[var(--text)] hover:text-heritage-gold transition-all duration-300 font-medium hover:scale-105 transform hover:translate-y-[-2px] relative group"
                   >
                     <span className="relative z-10">{t('navbar.dashboard')}</span>
@@ -558,56 +660,131 @@ export default function Navbar() {
                   </Link>
                 )}
                 {/* Cart, Gifts, Notifications, Theme, Profile always present */}
-                <Link 
-                  href="/cart" 
+                <Link
+                  href="/cart"
                   className="text-[var(--text)] hover:text-heritage-gold transition-all duration-300 font-medium relative hover:scale-105 transform hover:translate-y-[-2px] group"
                 >
                   <ShoppingCart className="w-6 h-6" />
                   {cartCount > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-gradient-to-r from-heritage-gold to-heritage-red text-white text-xs rounded-full w-6 h-6 flex items-center justify-center shadow-medium animate-pulse-glow">
+                    <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg animate-pulse-glow">
                       {cartCount}
                     </span>
                   )}
                 </Link>
-                <Link 
-                  href="/gifts" 
+                <Link
+                  href="/gifts"
                   className="text-[var(--text)] hover:text-pink-600 transition-all duration-300 font-medium relative hover:scale-105 transform hover:translate-y-[-2px] group"
                   title={t('navbar.gifts')}
                 >
                   <Gift className="w-6 h-6" />
                 </Link>
                 <div className="flex items-center space-x-6">
-                  {/* DM Chat Icon (desktop) - opens /dm page directly */}
-                  <div className="relative">
-                    <Link href="/dm" className="p-2 rounded-xl hover:bg-heritage-gold/50" title="Messages">
-                      <MessageCircle className="w-5 h-5 text-[var(--text)]" />
-                      {dmUnreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">{dmUnreadCount}</span>
-                      )}
-                    </Link>
-                  </div>
-                  <div className="relative">
-                    <button onClick={() => { setNotifOpen(!notifOpen); fetchUnread(user?.id) }} className="p-2 rounded-xl hover:bg-heritage-gold/50">
+                  {/* Notifications Icon (desktop) */}
+                  <div className="relative" ref={notificationsDropdownRef}>
+                    <button
+                      onClick={() => setNotificationsPopupOpen(!notificationsPopupOpen)}
+                      className="p-2 rounded-xl hover:bg-heritage-gold/50 transition-colors relative"
+                      title="Notifications"
+                    >
                       <Bell className="w-5 h-5 text-[var(--text)]" />
-                      {unreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">{unreadCount}</span>
+                      {unreadNotificationsCount > 0 && (
+                        <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center animate-pulse z-10 shadow-lg">{unreadNotificationsCount > 99 ? '99+' : unreadNotificationsCount}</span>
                       )}
                     </button>
-                    {notifOpen && (
-                      <div className="absolute right-0 mt-2 w-80 z-50">
-                        <div className="card rounded shadow-lg p-3 relative max-h-[60vh] overflow-y-auto">
-                          <button
-                            className="absolute top-2 right-2 text-[var(--muted)] hover:text-red-500 text-lg font-bold rounded-full px-2 py-1 transition-all"
-                            onClick={() => setNotifOpen(false)}
-                            aria-label="Close notifications"
-                          >
-                            ×
-                          </button>
-                          <NotificationsList />
-                        </div>
-                      </div>
-                    )}
+
+                    {/* Notifications Popup */}
+                    <AnimatePresence>
+                      {notificationsPopupOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          transition={{ duration: 0.2 }}
+                          className="absolute right-0 mt-2 w-96 z-50 origin-top-right"
+                        >
+                          <div className="bg-[var(--bg-2)]/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-[var(--border)] overflow-hidden">
+                            {/* Header */}
+                            <div className="p-4 border-b border-[var(--border)] bg-[var(--bg-3)]/50 flex items-center justify-between">
+                              <h3 className="font-bold text-[var(--text)]">{t('navbar.notifications') || 'Notifications'}</h3>
+                              <button
+                                onClick={() => setNotificationsPopupOpen(false)}
+                                className="text-[var(--muted)] hover:text-[var(--text)] transition-colors"
+                              >
+                                ×
+                              </button>
+                            </div>
+
+                            {/* Notifications List */}
+                            <div className="max-h-96 overflow-y-auto">
+                              {notificationsLoading ? (
+                                <div className="p-6 text-center">
+                                  <motion.div
+                                    animate={{ rotate: 360 }}
+                                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                                    className="w-5 h-5 border-2 border-[var(--heritage-gold)] border-t-transparent rounded-full mx-auto"
+                                  />
+                                </div>
+                              ) : notifications.length === 0 ? (
+                                <div className="p-6 text-center">
+                                  <Bell className="w-8 h-8 text-[var(--muted)] mx-auto mb-2 opacity-30" />
+                                  <p className="text-xs text-[var(--muted)]">{t('common.noData') || 'No notifications'}</p>
+                                </div>
+                              ) : (
+                                <div className="divide-y divide-[var(--border)]">
+                                  {notifications.map((notif) => (
+                                    <div
+                                      key={notif.id}
+                                      className={`p-4 transition-all duration-200 border-l-4 ${
+                                        notif.read
+                                          ? 'border-l-transparent bg-[var(--bg-1)]'
+                                          : 'border-l-blue-500 bg-[var(--bg-2)]'
+                                      } hover:bg-[var(--bg-3)]`}
+                                    >
+                                      <div className="flex justify-between items-start gap-3">
+                                        <div className="flex-1 min-w-0">
+                                          <h4 className="font-semibold text-sm text-[var(--text)] mb-1">{notif.title}</h4>
+                                          <p className="text-xs text-[var(--muted)] mb-2 line-clamp-2">{notif.body}</p>
+                                          <p className="text-xs text-[var(--muted)]">
+                                            {new Date(notif.created_at).toLocaleString('en-US', {
+                                              month: 'short',
+                                              day: 'numeric',
+                                              hour: '2-digit',
+                                              minute: '2-digit'
+                                            })}
+                                          </p>
+                                        </div>
+                                        {!notif.read && (
+                                          <button
+                                            onClick={() => markNotificationRead(notif.id)}
+                                            className="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full hover:bg-blue-600 transition-colors"
+                                            title="Mark as read"
+                                          />
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Footer */}
+                            {notifications.length > 0 && (
+                              <div className="p-3 border-t border-[var(--border)] bg-[var(--bg-1)]">
+                                <Link
+                                  href="/notifications"
+                                  className="text-xs font-semibold text-[var(--heritage-gold)] hover:text-[#d4af37] transition-colors block text-center py-2"
+                                  onClick={() => setNotificationsPopupOpen(false)}
+                                >
+                                  {t('common.viewAll') || 'View All Notifications'} →
+                                </Link>
+                              </div>
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
+
                   {/* Theme Toggle (Desktop) */}
                   <button
                     onClick={() => toggle()}
@@ -622,8 +799,8 @@ export default function Navbar() {
                   </button>
                   {/* Profile dropdown */}
                   <div className="relative" ref={profileDropdownRef}>
-                    <button 
-                     id="navbar-mobile-profile" 
+                    <button
+                      id="navbar-mobile-profile"
                       onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                       className="flex items-center space-x-3 px-3 py-2 rounded-xl hover:bg-heritage-gold/20 transition-all duration-200"
                     >
@@ -632,7 +809,7 @@ export default function Navbar() {
                         <img src={profile.profile_image} alt="avatar" className="w-8 h-8 rounded-full object-cover" />
                       ) : (
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-heritage-gold to-heritage-red text-white flex items-center justify-center font-semibold">
-                          {profile?.name ? profile.name.split(' ').map(s=>s[0]).slice(0,2).join('') : <User className="w-4 h-4" />}
+                          {profile?.name ? profile.name.split(' ').map(s => s[0]).slice(0, 2).join('') : <User className="w-4 h-4" />}
                         </div>
                       )}
                       <div className="text-left">
@@ -645,77 +822,139 @@ export default function Navbar() {
                         <div className="text-xs text-[var(--muted)]">{profile?.role || ''}</div>
                       </div>
                     </button>
-                    
+
                     {/* Profile Dropdown Modal */}
-                    {profileDropdownOpen && (
-                      <div className="absolute right-0 mt-2 w-64 z-50">
-                        <div className="card-glass rounded-2xl shadow-2xl p-4 border border-[var(--border)] bg-[var(--bg)]">
-                          <div className="flex items-center space-x-3 mb-4 pb-4 border-b border-[var(--border)]">
-                            {profile?.profile_image ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={profile.profile_image} alt="avatar" className="w-12 h-12 rounded-full object-cover" />
-                            ) : (
-                              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-heritage-gold to-heritage-red text-white flex items-center justify-center font-semibold text-lg">
-                                {profile?.name ? profile.name.split(' ').map(s=>s[0]).slice(0,2).join('') : <User className="w-6 h-6" />}
+                    <AnimatePresence>
+                      {profileDropdownOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          transition={{ duration: 0.2 }}
+                          className="absolute right-0 mt-2 w-72 z-50 origin-top-right"
+                        >
+                          <div className="bg-[var(--bg-2)]/95 backdrop-blur-xl rounded-2xl shadow-2xl p-0 border border-[var(--border)] overflow-hidden ring-1 ring-black/5">
+                            {/* Header */}
+                            <div className="p-4 border-b border-[var(--border)] bg-[var(--bg-3)]/50">
+                              <div className="flex items-center space-x-3">
+                                {profile?.profile_image ? (
+                                  <img src={profile.profile_image} alt="avatar" className="w-12 h-12 rounded-full object-cover border-2 border-[var(--heritage-gold)]" />
+                                ) : (
+                                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-heritage-gold to-heritage-red text-white flex items-center justify-center font-bold text-lg shadow-inner">
+                                    {profile?.name ? profile.name.split(' ').map(s => s[0]).slice(0, 2).join('') : <User className="w-6 h-6" />}
+                                  </div>
+                                )}
+                                <div className="min-w-0 flex-1">
+                                  <div className="font-bold text-[var(--text)] truncate">{translatedName || profile?.name}</div>
+                                  <div className="text-xs text-[var(--muted)] capitalize">{profile?.role || 'User'}</div>
+                                </div>
                               </div>
-                            )}
-                            <div>
-                              <div className="font-semibold text-[var(--text)]">{translatedName || profile?.name}</div>
-                              <div className="text-sm text-[var(--muted)]">{profile?.role || ''}</div>
+                              {mitraPoints !== null && (
+                                <div className="mt-3 flex items-center justify-between bg-[var(--bg-1)] p-2 rounded-lg border border-[var(--border)]">
+                                  <span className="text-xs font-semibold text-[var(--text)] uppercase tracking-wide">MitraPoints</span>
+                                  <span className="text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 rounded-full">{mitraPoints}</span>
+                                </div>
+                              )}
                             </div>
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <Link 
-                              href="/profile"
-                              onClick={() => setProfileDropdownOpen(false)}
-                              className="flex items-center space-x-3 w-full px-4 py-3 rounded-xl hover:bg-[var(--bg-2)] transition-all duration-200 group"
-                            >
-                              <User className="w-5 h-5 text-[var(--muted)] group-hover:text-heritage-gold" />
-                              <span className="text-[var(--text)] font-medium">{t('navbar.viewProfile')}</span>
-                            </Link>
-                            {/* Language Selector Dropdown */}
-                            <div className="flex items-center space-x-3 w-full px-4 py-3">
-                              <Palette className="w-5 h-5 text-[var(--muted)]" />
-                              <select
-                                value={currentLanguage}
-                                onChange={handleLanguageChange}
-                                className="w-full px-3 py-2 rounded-xl border border-gray-300 bg-[var(--bg-2)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-heritage-gold"
+
+                            {/* Menu Items */}
+                            <div className="p-2 space-y-1">
+                              {/* Dashboard Link (Sellers Only) */}
+                              {profile?.role === 'seller' && (
+                                <Link
+                                  href="/dashboard"
+                                  onClick={() => setProfileDropdownOpen(false)}
+                                  className="flex items-center space-x-3 w-full px-3 py-2.5 rounded-xl hover:bg-[var(--bg-3)] transition-colors group text-sm"
+                                >
+                                  <div className="w-8 h-8 rounded-full bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center border border-amber-100 dark:border-amber-800 group-hover:border-amber-400 transition-colors">
+                                    <LayoutDashboard className="w-4 h-4 text-amber-600 dark:text-amber-400 group-hover:text-amber-500" />
+                                  </div>
+                                  <span className="text-[var(--text)] font-medium">Seller Dashboard</span>
+                                </Link>
+                              )}
+
+                              <Link
+                                href="/profile"
+                                onClick={() => setProfileDropdownOpen(false)}
+                                className="flex items-center space-x-3 w-full px-3 py-2.5 rounded-xl hover:bg-[var(--bg-3)] transition-colors group text-sm"
                               >
-                                {languages.map(lang => (
-                                  <option key={lang.code} value={lang.code}>
-                                    {lang.flag} {lang.label}
-                                  </option>
-                                ))}
-                              </select>
+                                <div className="w-8 h-8 rounded-full bg-[var(--bg-1)] flex items-center justify-center border border-[var(--border)] group-hover:border-[var(--heritage-gold)] transition-colors">
+                                  <User className="w-4 h-4 text-[var(--muted)] group-hover:text-[var(--heritage-gold)]" />
+                                </div>
+                                <span className="text-[var(--text)] font-medium">My Profile</span>
+                              </Link>
+
+                              <Link
+                                href="/profile?tab=orders" // Assuming profile has tabs, or just profile/orders if that page existed. But profile page seems to handle orders.
+                                onClick={() => setProfileDropdownOpen(false)}
+                                className="flex items-center space-x-3 w-full px-3 py-2.5 rounded-xl hover:bg-[var(--bg-3)] transition-colors group text-sm"
+                              >
+                                <div className="w-8 h-8 rounded-full bg-[var(--bg-1)] flex items-center justify-center border border-[var(--border)] group-hover:border-[var(--heritage-gold)] transition-colors">
+                                  <Package className="w-4 h-4 text-[var(--muted)] group-hover:text-[var(--heritage-gold)]" />
+                                </div>
+                                <span className="text-[var(--text)] font-medium">My Orders</span>
+                              </Link>
+
+                              <Link
+                                href="/wishlist"
+                                onClick={() => setProfileDropdownOpen(false)}
+                                className="flex items-center space-x-3 w-full px-3 py-2.5 rounded-xl hover:bg-[var(--bg-3)] transition-colors group text-sm"
+                              >
+                                <div className="w-8 h-8 rounded-full bg-[var(--bg-1)] flex items-center justify-center border border-[var(--border)] group-hover:border-[var(--heritage-gold)] transition-colors">
+                                  <Heart className="w-4 h-4 text-[var(--muted)] group-hover:text-[var(--heritage-gold)]" />
+                                </div>
+                                <span className="text-[var(--text)] font-medium">Wishlist</span>
+                              </Link>
+
+                              {/* Language Selector */}
+                              <div className="pt-2 mt-2 border-t border-[var(--border)]">
+                                <div className="flex items-center space-x-3 w-full px-3 py-2 rounded-xl">
+                                  <div className="w-8 h-8 rounded-full bg-[var(--bg-1)] flex items-center justify-center border border-[var(--border)]">
+                                    <Palette className="w-4 h-4 text-[var(--muted)]" />
+                                  </div>
+                                  <select
+                                    value={currentLanguage}
+                                    onChange={handleLanguageChange}
+                                    className="flex-1 px-2 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg-1)] text-[var(--text)] text-xs focus:outline-none focus:ring-1 focus:ring-[var(--heritage-gold)]"
+                                  >
+                                    {languages.map(lang => (
+                                      <option key={lang.code} value={lang.code}>
+                                        {lang.flag} {lang.label}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </div>
+
+                              <button
+                                onClick={async () => {
+                                  setProfileDropdownOpen(false);
+                                  await handleSignOut();
+                                }}
+                                className="flex items-center space-x-3 w-full px-3 py-2.5 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors group text-sm mt-1"
+                              >
+                                <div className="w-8 h-8 rounded-full bg-red-50 dark:bg-red-900/10 flex items-center justify-center border border-transparent group-hover:border-red-200 dark:group-hover:border-red-800 transition-colors">
+                                  <LogOut className="w-4 h-4 text-red-500" />
+                                </div>
+                                <span className="text-red-600 font-medium">Sign Out</span>
+                              </button>
                             </div>
-                            
-                            <button 
-                              onClick={async () => { 
-                                setProfileDropdownOpen(false);
-                                await signOut(); 
-                              }}
-                              className="flex items-center space-x-3 w-full px-4 py-3 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200 group"
-                            >
-                              <LogOut className="w-5 h-5 text-red-500 group-hover:text-red-600" />
-                              <span className="text-red-600 font-medium">{t('navbar.signOut')}</span>
-                            </button>
                           </div>
-                        </div>
-                      </div>
-                    )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </div>
               </>
             ) : (
               <div className="flex items-center space-x-6">
-                <Link 
+                <Link
                   href="/auth/signin"
                   className="text-[var(--text)] hover:text-heritage-gold transition-all duration-300 font-medium hover:scale-105 transform hover:translate-y-[-2px] px-4 py-2 rounded-xl hover:bg-heritage-gold/50"
                 >
                   {t('navbar.signIn')}
                 </Link>
-                <Link 
+                <Link
                   href="/auth/signup"
                   className="btn-primary text-sm px-8 py-3"
                 >
@@ -727,8 +966,8 @@ export default function Navbar() {
           </div>
 
           {/* Mobile theme toggle (visible on small screens) */}
-            <div className="md:hidden flex items-center space-x-2">
-            {/* DM Chat Icon (mobile) removed; now in menu below */}
+          <div className="md:hidden flex items-center space-x-2">
+            {/* Messages moved to profile page */}
             {/* Profile image icon for mobile, always at top left of menu */}
             {user && (
               <Link href="/profile" className="mr-2 flex items-center justify-center">
@@ -751,21 +990,21 @@ export default function Navbar() {
                       <stop offset="1" stopColor="#FFB300" />
                     </linearGradient>
                   </defs>
-                  <path d="M7 4V2h10v2h3a1 1 0 0 1 1 1v2c0 3.866-3.134 7-7 7s-7-3.134-7-7V5a1 1 0 0 1 1-1h3z" fill="url(#trophyGoldMobile)" stroke="#B8860B" strokeWidth="1.2"/>
-                  <ellipse cx="12" cy="19" rx="5" ry="2.5" fill="#FFF8DC" stroke="#B8860B" strokeWidth="1.1"/>
-                  <rect x="9" y="15" width="6" height="3" rx="1.2" fill="#FFD700" stroke="#B8860B" strokeWidth="1.1"/>
-                  <path d="M4 7c0 2.5 1.5 4.5 4 5.5" stroke="#B8860B" strokeWidth="1.1" fill="none"/>
-                  <path d="M20 7c0 2.5-1.5 4.5-4 5.5" stroke="#B8860B" strokeWidth="1.1" fill="none"/>
+                  <path d="M7 4V2h10v2h3a1 1 0 0 1 1 1v2c0 3.866-3.134 7-7 7s-7-3.134-7-7V5a1 1 0 0 1 1-1h3z" fill="url(#trophyGoldMobile)" stroke="#B8860B" strokeWidth="1.2" />
+                  <ellipse cx="12" cy="19" rx="5" ry="2.5" fill="#FFF8DC" stroke="#B8860B" strokeWidth="1.1" />
+                  <rect x="9" y="15" width="6" height="3" rx="1.2" fill="#FFD700" stroke="#B8860B" strokeWidth="1.1" />
+                  <path d="M4 7c0 2.5 1.5 4.5 4 5.5" stroke="#B8860B" strokeWidth="1.1" fill="none" />
+                  <path d="M20 7c0 2.5-1.5 4.5-4 5.5" stroke="#B8860B" strokeWidth="1.1" fill="none" />
                 </svg>
               </span>
             </Link>
             {/* Reels button (mobile) - in menu, icon always black */}
-            <Link  href="/reels" className="p-2 rounded-xl flex items-center justify-center" title="Reels">
-              < Video  id="navbar-mobile-reels" className="w-6 h-6 text-black" />
+            <Link href="/reels" className="p-2 rounded-xl flex items-center justify-center" title="Reels">
+              < Video id="navbar-mobile-reels" className="w-6 h-6 text-black" />
             </Link>
             {/* Theme toggle (mobile) */}
             <button
-            id='navbar-mobile-theme-toggle'
+              id='navbar-mobile-theme-toggle'
               onClick={() => toggle()}
               className="theme-toggle p-1"
               data-theme={theme}
@@ -773,59 +1012,47 @@ export default function Navbar() {
             >
               <div className="knob" />
             </button>
-            {/* Mobile menu button with orange dot if new notification */}
+            {/* Mobile menu button with red dot if new notification */}
             <div className="relative">
               <button
                 onClick={() => {
                   setIsMenuOpen(!isMenuOpen);
-                  // If opening menu, and notification panel is open, clear orange dot
-                  if (!isMenuOpen && hasNewNotif) setHasNewNotif(false);
+                  if (!isMenuOpen) {
+                    setShowMobileNotificationDot(false);
+                  }
                 }}
-                className="p-3 rounded-2xl text-[var(--text)] hover:text-heritage-gold hover:bg-heritage-gold/50 transition-all duration-300 hover:scale-105"
+                className="relative p-3 rounded-2xl text-[var(--text)] hover:text-heritage-gold hover:bg-heritage-gold/50 transition-all duration-300 hover:scale-105"
               >
                 {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-                {/* Orange dot for new notification */}
-                {hasNewNotif && !isMenuOpen && (
-                  <span className="absolute top-1 right-1 w-3 h-3 bg-orange-500 rounded-full border-2 border-white animate-pulse" />
-                )}
               </button>
+              {showMobileNotificationDot && (
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-600 rounded-full animate-pulse shadow-lg shadow-red-600/50 z-20"
+                />
+              )}
             </div>
           </div>
 
-  {/* Leaderboard modal removed: always use /leaderboard page */}
+          {/* Leaderboard modal removed: always use /leaderboard page */}
         </div>
 
         {/* Mobile navbar */}
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-heritage-gold/50 bg-[var(--bg-2)]/95 backdrop-blur-md rounded-3xl mt-4 shadow-medium animate-slide-in-up text-[var(--text)]">
             <div className="flex flex-col space-y-4">
-              <Link 
+              <Link
                 id="navbar-mobile-marketplace"
-                href="/marketplace" 
+                href="/marketplace"
                 className="text-[var(--text)] hover:text-heritage-gold transition-all duration-300 font-medium px-6 py-3 hover:bg-heritage-gold/50 rounded-2xl hover:translate-x-2 transform"
                 onClick={() => setIsMenuOpen(false)}
               >
                 {t('navbar.marketplace')}
               </Link>
-              {/* DM Chat Option (mobile menu) */}
-              {user && (
-                <Link 
-                  id="navbar-mobile-dm"
-                  href="/dm" 
-                  className="text-[var(--text)] hover:text-heritage-gold transition-all duration-300 font-medium px-6 py-3 hover:bg-heritage-gold/50 rounded-2xl hover:translate-x-2 transform flex items-center gap-2 relative"
-                  onClick={() => setIsMenuOpen(false)}
-                  title={t('navbar.messages')}
-                >
-                  <MessageCircle className="w-5 h-5" />
-                  <span>{t('navbar.messages')}</span>
-                  {dmUnreadCount > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">{dmUnreadCount}</span>
-                  )}
-                </Link>
-              )}
-              <Link 
+              <Link
                 id="navbar-mobile-auctions"
-                href="/auctions" 
+                href="/auctions"
                 className="text-[var(--text)] hover:text-heritage-gold transition-all duration-300 font-medium px-6 py-3 hover:bg-heritage-gold/50 rounded-2xl hover:translate-x-2 transform"
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -836,62 +1063,76 @@ export default function Navbar() {
                   )}
                 </span>
               </Link>
-              {/* Reels/Ads icon - enabled, no background, always black icon */}
-              <Link  href="/reels" className="flex items-center px-6 py-3" onClick={() => setIsMenuOpen(false)}>
-                
-                <Video className="w-6 h-6 text-black mr-3" />
-                <span className="font-medium text-black">{t('navbar.reels')}/{t('navbar.ads')}</span>
+              {/* Reels/Ads icon - enabled, no background, always adaptive icon */}
+              <Link href="/reels" className="flex items-center px-6 py-3" onClick={() => setIsMenuOpen(false)}>
+
+                <Video className="w-6 h-6 text-[var(--text)] mr-3" />
+                <span className="font-medium text-[var(--text)]">{t('navbar.reels')}/{t('navbar.ads')}</span>
               </Link>
-          {loading ? (
+              {loading ? (
                 <div className="space-y-4">
-            <div className="w-32 h-8 bg-[var(--bg-2)] rounded animate-pulse mx-6"></div>
-            <div className="w-32 h-8 bg-[var(--bg-2)] rounded animate-pulse mx-6"></div>
+                  <div className="w-32 h-8 bg-[var(--bg-2)] rounded animate-pulse mx-6"></div>
+                  <div className="w-32 h-8 bg-[var(--bg-2)] rounded animate-pulse mx-6"></div>
                 </div>
               ) : user ? (
                 <>
                   {profile?.role === 'seller' && (
-                    <Link 
+                    <Link
                       id="navbar-mobile-dashboard"
-                      href="/dashboard" 
+                      href="/dashboard"
                       className="text-[var(--text)] hover:text-heritage-gold transition-all duration-300 font-medium px-6 py-3 hover:bg-heritage-gold/50 rounded-2xl hover:translate-x-2 transform"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       {t('navbar.dashboard')}
                     </Link>
                   )}
-                  <Link 
+                  <Link
                     id="navbar-mobile-notifications"
-                    href="/notifications" 
+                    href="/notifications"
                     className="text-[var(--text)] hover:text-heritage-gold transition-all duration-300 font-medium px-6 py-3 hover:bg-heritage-gold/50 rounded-2xl hover:translate-x-2 transform flex items-center gap-2 relative"
                     onClick={() => {
                       setIsMenuOpen(false);
-                      setHasNewNotif(false); // Clear orange dot when notifications opened
+                      setShowMobileNotificationDot(false);
                     }}
                   >
-                    {t('navbar.notifications') || 'Notifications'}
-                    {/* Orange dot for new notification in menu */}
-                    {hasNewNotif && (
-                      <span className="ml-2 w-3 h-3 bg-orange-500 rounded-full border-2 border-white animate-pulse" />
+                    <Bell className="w-5 h-5" />
+                    <span>{t('navbar.notifications') || 'Notifications'}</span>
+                    {showMobileNotificationDot && (
+                      <motion.span
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="ml-auto w-4 h-4 bg-red-600 rounded-full animate-pulse shadow-lg shadow-red-600/50"
+                      />
+                    )}
+                    {unreadNotificationsCount > 0 && !showMobileNotificationDot && (
+                      <span className="ml-auto bg-red-600 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center z-10 shadow-lg">
+                        {unreadNotificationsCount > 99 ? '99+' : unreadNotificationsCount}
+                      </span>
                     )}
                   </Link>
-                  <Link 
+                  <Link
                     id="navbar-mobile-cart"
-                    href="/cart" 
-                    className="text-[var(--text)] hover:text-heritage-gold transition-all duration-300 font-medium px-6 py-3 hover:bg-heritage-gold/50 rounded-2xl hover:translate-x-2 transform"
+                    href="/cart"
+                    className="text-[var(--text)] hover:text-heritage-gold transition-all duration-300 font-medium px-6 py-3 hover:bg-heritage-gold/50 rounded-2xl hover:translate-x-2 transform relative"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {t('navbar.cart')}
+                    {cartCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                        {cartCount}
+                      </span>
+                    )}
                   </Link>
-                  <Link 
+                  <Link
                     id="navbar-mobile-gifts"
-                    href="/gifts" 
+                    href="/gifts"
                     className="text-[var(--text)] hover:text-pink-600 transition-all duration-300 font-medium px-6 py-3 hover:bg-pink-100 rounded-2xl hover:translate-x-2 transform flex items-center gap-2"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <Gift className="w-5 h-5" />
                     {t('navbar.gifts')}
                   </Link>
-                    <div className="pt-4 border-t border-heritage-gold/50 px-6">
+                  <div className="pt-4 border-t border-heritage-gold/50 px-6">
                     <span className="text-[var(--text)] font-medium block mb-3 px-4 py-2 bg-[var(--bg-2)] rounded-xl backdrop-blur-sm">
                       {translatedName || profile?.name}
                     </span>
@@ -906,14 +1147,14 @@ export default function Navbar() {
                 </>
               ) : (
                 <div className="flex flex-col space-y-4 pt-4 border-t border-heritage-gold/50 px-6">
-                  <Link 
+                  <Link
                     href="/auth/signin"
-                    className="text-gray-700 hover:text-heritage-gold transition-all duration-300 font-medium px-6 py-3 hover:bg-heritage-gold/50 rounded-2xl hover:translate-x-2 transform"
+                    className="text-[var(--text)] hover:text-heritage-gold transition-all duration-300 font-medium px-6 py-3 hover:bg-heritage-gold/50 rounded-2xl hover:translate-x-2 transform"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {t('navbar.signIn')}
                   </Link>
-                  <Link 
+                  <Link
                     href="/auth/signup"
                     className="btn-primary text-center"
                     onClick={() => setIsMenuOpen(false)}
@@ -926,7 +1167,7 @@ export default function Navbar() {
               {/* Mobile Language Selector removed from Navbar */}
               {/* Mobile Theme Toggle */}
               <div className="pt-4 px-6">
-                <label className="block text-sm text-gray-600 mb-2">{t('navbar.theme') || 'Theme'}</label>
+                <label className="block text-sm text-[var(--muted)] mb-2">{t('navbar.theme') || 'Theme'}</label>
                 <div>
                   <button
                     id="navbar-mobile-theme"
@@ -937,7 +1178,7 @@ export default function Navbar() {
                     aria-label="Toggle theme"
                   >
                     <div className="knob" />
-                    <div className="text-xs font-medium ml-2">{theme === 'dark' ? (t('navbar.dark') || 'Dark') : (t('navbar.light') || 'Light')}</div>
+                    <div className="text-xs font-medium ml-2 text-[var(--text)]">{theme === 'dark' ? (t('navbar.dark') || 'Dark') : (t('navbar.light') || 'Light')}</div>
                   </button>
                 </div>
               </div>
@@ -945,7 +1186,38 @@ export default function Navbar() {
           </div>
         )}
       </div>
-      {/* DM Drawer Modal removed: DM icon now opens /dm page directly */}
+      {/* Messages section moved to profile page */}
+
+      {/* New Notification Toast */}
+      <AnimatePresence>
+        {newNotificationToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            transition={{ duration: 0.3 }}
+            className="fixed top-20 left-1/2 transform -translate-x-1/2 z-[60] max-w-sm"
+          >
+            <div className="bg-[var(--bg-2)] border-l-4 border-blue-500 rounded-xl shadow-2xl p-4 flex gap-4 items-start backdrop-blur-md">
+              <div className="flex-shrink-0">
+                <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                  <Bell className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-semibold text-[var(--text)]">{newNotificationToast.title}</h3>
+                <p className="text-xs text-[var(--muted)] mt-1 line-clamp-2">{newNotificationToast.body}</p>
+              </div>
+              <button
+                onClick={() => setNewNotificationToast(null)}
+                className="flex-shrink-0 text-[var(--muted)] hover:text-[var(--text)] transition-colors"
+              >
+                ×
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   )
 }

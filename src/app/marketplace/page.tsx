@@ -48,14 +48,14 @@ type CollabJoin = {
     status: string
     initiator?: { id: string; name?: string }[] | { id: string; name?: string } | null
     partner?: { id: string; name?: string }[] | { id: string; name?: string } | null
-  } | null) | ( {
+  } | null) | ({
     id: string
     initiator_id: string
     partner_id: string
     status: string
     initiator?: { id: string; name?: string }[] | null
     partner?: { id: string; name?: string }[] | null
-  }[] )
+  }[])
 }
 
 export default function Marketplace() {
@@ -72,7 +72,7 @@ function MarketplaceContent() {
   type TourStep = {
     element: string;
     intro: string;
-   
+
   };
   const getTourSteps = (): TourStep[] => {
     const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
@@ -92,7 +92,7 @@ function MarketplaceContent() {
       {
         element: '#joyride-add-to-cart-btn',
         intro: '<span style="font-size:1.1em">🛒 <b>Add to Cart</b></span><br/>Add products to your cart using this button.',
-        
+
       },
       {
         element: '#joyride-wishlist-btn',
@@ -159,7 +159,7 @@ function MarketplaceContent() {
               doneLabel: '✨ Done',
               skipLabel: 'Skip',
             });
-            intro.onchange(function(targetElement) {
+            intro.onchange(function (targetElement) {
               const currentStep = typeof intro.currentStep === 'function' ? intro.currentStep() : 0;
               if (typeof currentStep === 'number' && steps[currentStep]) {
                 const step = steps[currentStep];
@@ -234,7 +234,7 @@ function MarketplaceContent() {
     synthRef.current?.cancel()
     setNarratingId(null)
   }
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const { t, i18n } = useTranslation()
   const { currentLanguage } = useLanguage()
   const searchParams = useSearchParams()
@@ -260,75 +260,120 @@ function MarketplaceContent() {
   const [arImageUrl, setArImageUrl] = useState<string | undefined>(undefined)
   const [arProductType, setArProductType] = useState<'vertical' | 'horizontal'>('vertical')
 
-    // Speech recognition for search input
-    const [isListening, setIsListening] = useState(false)
-    const recognitionRef = useRef<SpeechRecognition | null>(null)
+  // Wishlist state
+  const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set())
+  const [wishlistLoading, setWishlistLoading] = useState(false)
 
-    // Map app language to BCP-47
-    const getSpeechLang = () => {
-      const lang = currentLanguage || i18n.language || 'en'
-      // Map app language to BCP-47 code (all names and short codes)
-      const langMap: Record<string, string> = {
-        en: 'en-IN',
-        hi: 'hi-IN',
-        assamese: 'as-IN',
-        bengali: 'bn-IN',
-        bodo: 'brx-IN',
-        dogri: 'doi-IN',
-        gujarati: 'gu-IN',
-        kannad: 'kn-IN',
-        kashmiri: 'ks-IN',
-        konkani: 'kok-IN',
-        maithili: 'mai-IN',
-        malyalam: 'ml-IN',
-        manipuri: 'mni-IN',
-        marathi: 'mr-IN',
-        nepali: 'ne-NP',
-        oriya: 'or-IN',
-        punjabi: 'pa-IN',
-        sanskrit: 'sa-IN',
-        santhali: 'sat-IN',
-        sindhi: 'sd-IN',
-        tamil: 'ta-IN',
-        telgu: 'te-IN',
-        urdu: 'ur-IN',
-        // Short codes
-        as: 'as-IN', bn: 'bn-IN', brx: 'brx-IN', doi: 'doi-IN', gu: 'gu-IN', kn: 'kn-IN', ks: 'ks-IN', kok: 'kok-IN', mai: 'mai-IN', ml: 'ml-IN', mni: 'mni-IN', mr: 'mr-IN', ne: 'ne-NP', or: 'or-IN', pa: 'pa-IN', sa: 'sa-IN', sat: 'sat-IN', sd: 'sd-IN', ta: 'ta-IN', te: 'te-IN', ur: 'ur-IN',
-      }
-      return langMap[lang] || lang
+  // Fetch wishlist on mount
+  useEffect(() => {
+    if (profile?.wishlist) {
+      setWishlistIds(new Set(profile.wishlist))
+    }
+  }, [profile])
+
+  const toggleWishlist = async (productId: string) => {
+    if (!user || !profile) {
+      alert(t('common.loginRequired'))
+      return
     }
 
-    const handleMicClick = () => {
-      if (isListening) {
-        recognitionRef.current?.stop()
-        setIsListening(false)
-        return
-      }
-      let SpeechRecognitionCtor: typeof SpeechRecognition | undefined = undefined
-      if (typeof window !== 'undefined') {
-        SpeechRecognitionCtor = (window.SpeechRecognition || (window as Window & { webkitSpeechRecognition?: typeof SpeechRecognition }).webkitSpeechRecognition) as typeof SpeechRecognition | undefined
-      }
-      if (!SpeechRecognitionCtor) {
-        alert('Speech recognition is not supported in this browser.')
-        return
-      }
-      const recognition = new SpeechRecognitionCtor()
-      recognition.lang = getSpeechLang()
-      recognition.interimResults = false
-      recognition.maxAlternatives = 1
-      recognition.onstart = () => setIsListening(true)
-      recognition.onend = () => setIsListening(false)
-      recognition.onerror = () => setIsListening(false)
-      recognition.onresult = (event: SpeechRecognitionEvent) => {
-        if (event.results.length > 0) {
-          const transcript = event.results[0][0].transcript
-          setSearchTerm(transcript)
-        }
-        setIsListening(false)
-      }
-      recognitionRef.current = recognition
-      recognition.start()
+    // Optimistic update
+    const isLiked = wishlistIds.has(productId)
+    const newWishlist = new Set(wishlistIds)
+    if (isLiked) {
+      newWishlist.delete(productId)
+    } else {
+      newWishlist.add(productId)
     }
+    setWishlistIds(newWishlist)
+
+    try {
+      const updatedWishlist = Array.from(newWishlist)
+      const { error } = await supabase
+        .from('profiles')
+        .update({ wishlist: updatedWishlist })
+        .eq('id', user.id)
+
+      if (error) {
+        throw error
+      }
+    } catch (error) {
+      console.error('Error updating wishlist:', JSON.stringify(error, null, 2))
+      // Revert on error
+      setWishlistIds(wishlistIds)
+      alert('Error updating wishlist. Please try again.')
+    }
+  }
+
+  // Speech recognition for search input
+  const [isListening, setIsListening] = useState(false)
+  const recognitionRef = useRef<SpeechRecognition | null>(null)
+
+  // Map app language to BCP-47
+  const getSpeechLang = () => {
+    const lang = currentLanguage || i18n.language || 'en'
+    // Map app language to BCP-47 code (all names and short codes)
+    const langMap: Record<string, string> = {
+      en: 'en-IN',
+      hi: 'hi-IN',
+      assamese: 'as-IN',
+      bengali: 'bn-IN',
+      bodo: 'brx-IN',
+      dogri: 'doi-IN',
+      gujarati: 'gu-IN',
+      kannad: 'kn-IN',
+      kashmiri: 'ks-IN',
+      konkani: 'kok-IN',
+      maithili: 'mai-IN',
+      malyalam: 'ml-IN',
+      manipuri: 'mni-IN',
+      marathi: 'mr-IN',
+      nepali: 'ne-NP',
+      oriya: 'or-IN',
+      punjabi: 'pa-IN',
+      sanskrit: 'sa-IN',
+      santhali: 'sat-IN',
+      sindhi: 'sd-IN',
+      tamil: 'ta-IN',
+      telgu: 'te-IN',
+      urdu: 'ur-IN',
+      // Short codes
+      as: 'as-IN', bn: 'bn-IN', brx: 'brx-IN', doi: 'doi-IN', gu: 'gu-IN', kn: 'kn-IN', ks: 'ks-IN', kok: 'kok-IN', mai: 'mai-IN', ml: 'ml-IN', mni: 'mni-IN', mr: 'mr-IN', ne: 'ne-NP', or: 'or-IN', pa: 'pa-IN', sa: 'sa-IN', sat: 'sat-IN', sd: 'sd-IN', ta: 'ta-IN', te: 'te-IN', ur: 'ur-IN',
+    }
+    return langMap[lang] || lang
+  }
+
+  const handleMicClick = () => {
+    if (isListening) {
+      recognitionRef.current?.stop()
+      setIsListening(false)
+      return
+    }
+    let SpeechRecognitionCtor: typeof SpeechRecognition | undefined = undefined
+    if (typeof window !== 'undefined') {
+      SpeechRecognitionCtor = (window.SpeechRecognition || (window as Window & { webkitSpeechRecognition?: typeof SpeechRecognition }).webkitSpeechRecognition) as typeof SpeechRecognition | undefined
+    }
+    if (!SpeechRecognitionCtor) {
+      alert('Speech recognition is not supported in this browser.')
+      return
+    }
+    const recognition = new SpeechRecognitionCtor()
+    recognition.lang = getSpeechLang()
+    recognition.interimResults = false
+    recognition.maxAlternatives = 1
+    recognition.onstart = () => setIsListening(true)
+    recognition.onend = () => setIsListening(false)
+    recognition.onerror = () => setIsListening(false)
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      if (event.results.length > 0) {
+        const transcript = event.results[0][0].transcript
+        setSearchTerm(transcript)
+      }
+      setIsListening(false)
+    }
+    recognitionRef.current = recognition
+    recognition.start()
+  }
 
   // Only fetch products when searchParams changes, not on translation change
   useEffect(() => {
@@ -370,12 +415,12 @@ function MarketplaceContent() {
     if (searchTerm.trim() === '') {
       return
     }
-    
+
     // Debounce the search by 300ms
     const timer = setTimeout(() => {
       filterProducts()
     }, 300)
-    
+
     return () => clearTimeout(timer)
   }, [searchTerm])
 
@@ -385,13 +430,13 @@ function MarketplaceContent() {
     if (searchTerm.trim() === '') {
       filterProducts()
     }
-    }, [products, selectedCategory, showCollaborativeOnly, showVirtualOnly])
+  }, [products, selectedCategory, showCollaborativeOnly, showVirtualOnly])
 
   // Handle search input change with immediate reset for empty search
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
     setSearchTerm(value)
-    
+
     // Immediately reset to all products when search is cleared
     if (value.trim() === '') {
       setIsSearching(false)
@@ -411,8 +456,8 @@ function MarketplaceContent() {
         const { data: aData } = await supabase
           .from('auctions')
           .select('product_id,status,starts_at')
-          .in('status', ['scheduled','running'])
-  const ids = (aData || []).map((a: { product_id: string }) => a.product_id)
+          .in('status', ['scheduled', 'running'])
+        const ids = (aData || []).map((a: { product_id: string }) => a.product_id)
         setAuctionedProductIds(ids)
       } catch (err) {
         console.error('Error fetching auctions for marketplace:', err)
@@ -486,13 +531,13 @@ function MarketplaceContent() {
         collaborators: collabMap.get(product.id) || []
       }))
 
-  setProducts(enrichedProducts)
-      
+      setProducts(enrichedProducts)
+
       // Extract unique categories
-  const uniqueCategories = [...new Set(enrichedProducts?.map(p => p.category) || [])]
-  setCategories(uniqueCategories)
-      
-  setLoading(false)
+      const uniqueCategories = [...new Set(enrichedProducts?.map(p => p.category) || [])]
+      setCategories(uniqueCategories)
+
+      setLoading(false)
     } catch (error) {
       console.error('Error fetching products:', error)
       setLoading(false)
@@ -514,7 +559,7 @@ function MarketplaceContent() {
 
         if (response.ok) {
           const semanticResults = await response.json()
-          
+
           // Enrich semantic results with seller and collaboration information from the products we already have
           const enrichedResults = semanticResults.map((result: ProductBase) => {
             const fullProduct = products.find(p => p.id === result.id)
@@ -568,7 +613,7 @@ function MarketplaceContent() {
     // Only apply search filter if searchTerm is not empty
     if (searchTerm && searchTerm.trim().length > 0) {
       filtered = filtered.filter(product =>
-        (product.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (product.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.category?.toLowerCase().includes(searchTerm.toLowerCase()))
       );
@@ -619,7 +664,7 @@ function MarketplaceContent() {
         // Translate categories from the categories array (one-to-one mapping)
         const trCatsList = categories?.length ? await translateArray(categories, lang) : []
         const trTitles = await translateArray(titles, lang)
-        
+
         // Translate seller names
         const uniqueSellerNames = [...new Set(products.map(p => p.seller?.name).filter(Boolean))]
         console.log('Translating seller names:', uniqueSellerNames, 'to language:', lang)
@@ -631,7 +676,7 @@ function MarketplaceContent() {
         })
         console.log('Seller name mapping:', sellerNameMap)
         setTranslatedSellerNames(sellerNameMap)
-        
+
         const dp = products.map((p, idx) => {
           const origCat = p.category
           const catIndex = categories.findIndex(c => c === origCat)
@@ -792,7 +837,7 @@ function MarketplaceContent() {
             const vh = aHashOf(vp)
             if (pc && vc) {
               const dr = pc.r - vc.r, dg = pc.g - vc.g, db = pc.b - vc.b
-              const dist = Math.sqrt(dr*dr + dg*dg + db*db) // 0..441
+              const dist = Math.sqrt(dr * dr + dg * dg + db * db) // 0..441
               const sim = Math.max(0, 1 - dist / 441)
               colorScore = Math.max(colorScore, sim)
             }
@@ -843,7 +888,7 @@ function MarketplaceContent() {
   }, [user])
 
   // Cart feedback state
-  const [cartStatus, setCartStatus] = useState<'success'|'error'|null>(null);
+  const [cartStatus, setCartStatus] = useState<'success' | 'error' | null>(null);
   const [cartMessage, setCartMessage] = useState('');
   const [cartModalOpen, setCartModalOpen] = useState(false);
 
@@ -855,6 +900,9 @@ function MarketplaceContent() {
         addToAnonymousCart(productId, 1)
         setCartStatus('success');
         setCartMessage(t('cart.addedSuccess'));
+        
+        // Dispatch custom event to immediately update cart count in navbar
+        window.dispatchEvent(new CustomEvent('cartUpdated'));
         setCartModalOpen(true);
         return;
       }
@@ -893,6 +941,9 @@ function MarketplaceContent() {
       if (res.error) throw res.error;
       setCartStatus('success');
       setCartMessage(t('cart.addedSuccess'));
+      
+      // Dispatch custom event to immediately update cart count in navbar
+      window.dispatchEvent(new CustomEvent('cartUpdated'));
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('Add to cart error:', err);
@@ -902,7 +953,7 @@ function MarketplaceContent() {
     setCartModalOpen(true);
   }
 
-  
+
 
   if (loading) {
     return (
@@ -941,7 +992,7 @@ function MarketplaceContent() {
           </div>
         </div>
       )}
-                  {/* Onboarding tour will be integrated with Intro.js here */}
+      {/* Onboarding tour will be integrated with Intro.js here */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
@@ -993,25 +1044,25 @@ function MarketplaceContent() {
             <span className="text-gray-400">{t('marketplace.aiHelperHint')}</span>
           </div>
 
- 
+
 
           <div className="grid md:grid-cols-2 gap-4">
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--muted)] w-5 h-5" />
               <input
                 type="text"
                 placeholder={t('marketplace.searchInputPlaceholder')}
                 value={searchTerm}
                 onChange={handleSearchChange}
-                className="w-full pl-10 pr-14 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="w-full pl-10 pr-14 py-3 border border-[var(--border)] bg-[var(--bg-1)] text-[var(--text)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--heritage-gold)] focus:border-transparent placeholder-[var(--muted)]"
                 aria-label={t('marketplace.searchInputPlaceholder')}
               />
               {/* Mic icon for speech input */}
               <button
                 type="button"
                 onClick={handleMicClick}
-                className={`absolute right-3 top-1/2 transform -translate-y-1/2 bg-white p-2 rounded-full border border-gray-300 shadow-sm hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-colors ${isListening ? 'text-orange-600' : 'text-gray-400'}`}
+                className={`absolute right-3 top-1/2 transform -translate-y-1/2 bg-[var(--bg-2)] p-2 rounded-full border border-[var(--border)] shadow-sm hover:bg-[var(--bg-3)] focus:outline-none focus:ring-2 focus:ring-[var(--heritage-gold)] transition-colors ${isListening ? 'text-orange-600' : 'text-[var(--muted)]'}`}
                 title={isListening ? t('marketplace.listening') : t('marketplace.speakToSearch')}
                 aria-label={t('marketplace.speakToSearch')}
               >
@@ -1028,11 +1079,11 @@ function MarketplaceContent() {
 
             {/* Category Filter */}
             <div className="relative">
-              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--muted)] w-5 h-5" />
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white"
+                className="w-full pl-10 pr-4 py-3 border border-[var(--border)] bg-[var(--bg-1)] text-[var(--text)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--heritage-gold)] focus:border-transparent appearance-none"
               >
                 <option value="">{t('marketplace.allCategories')}</option>
                 {/* Map display labels with original values for filtering */}
@@ -1044,14 +1095,14 @@ function MarketplaceContent() {
               </select>
             </div>
           </div>
-                 {/* Gifting & Collaborative Button Row */}
+          {/* Gifting & Collaborative Button Row */}
           <div className="mb-4 mt-4 flex flex-col md:flex-row items-center justify-center gap-4">
             <button
               type="button"
               aria-label={t('marketplace.giftableProducts')}
               className={`px-4 py-2 rounded-lg font-medium transition-transform duration-200 ease-out transform will-change-transform flex items-center gap-2 shadow-sm hover:-translate-y-3.5 hover:scale-[1.02] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-orange-200  ${searchTerm === 'gift item'
                 ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-md border-yellow-500'
-                : 'bg-white hover:border-gray-400 dark:hover:border-gray-500'}
+                : 'bg-[var(--bg-2)] text-[var(--text)] border-[var(--border)] hover:bg-[var(--bg-3)]'}
               `}
               onClick={() => setSearchTerm(searchTerm === 'gift item' ? '' : 'gift item')}
             >
@@ -1059,30 +1110,28 @@ function MarketplaceContent() {
             </button>
             <button
               onClick={() => setShowCollaborativeOnly(!showCollaborativeOnly)}
-              className={`px-4 py-2 rounded-lg font-medium transition-transform duration-200 ease-out transform will-change-transform flex items-center gap-2 shadow-sm hover:-translate-y-3.5 hover:scale-[1.02] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-orange-200 ${
-                showCollaborativeOnly
-                  ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-md border-yellow-500'
-                  : 'bg-white hover:border-gray-400 dark:hover:border-gray-500'
-              }`}
+              className={`px-4 py-2 rounded-lg font-medium transition-transform duration-200 ease-out transform will-change-transform flex items-center gap-2 shadow-sm hover:-translate-y-3.5 hover:scale-[1.02] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-orange-200 ${showCollaborativeOnly
+                ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-md border-yellow-500'
+                : 'bg-[var(--bg-2)] text-[var(--text)] border-[var(--border)] hover:bg-[var(--bg-3)]'
+                }`}
               aria-pressed={showCollaborativeOnly}
             >
-               {showCollaborativeOnly ? t('marketplace.showingCollaborativeOnly') : t('marketplace.showCollaborativeProducts')}
+              {showCollaborativeOnly ? t('marketplace.showingCollaborativeOnly') : t('marketplace.showCollaborativeProducts')}
             </button>
             <button
               onClick={() => setShowVirtualOnly(!showVirtualOnly)}
-              className={`px-4 py-2 rounded-lg font-medium transition-transform duration-200 ease-out transform will-change-transform flex items-center gap-2 shadow-sm hover:-translate-y-3.5 hover:scale-[1.02] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-cyan-200 ${
-                showVirtualOnly
-                  ? 'bg-gradient-to-r from-cyan-400 to-teal-500 text-white shadow-md border-cyan-500'
-                  : 'bg-white hover:border-gray-400 dark:hover:border-gray-500'
-              }`}
+              className={`px-4 py-2 rounded-lg font-medium transition-transform duration-200 ease-out transform will-change-transform flex items-center gap-2 shadow-sm hover:-translate-y-3.5 hover:scale-[1.02] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-cyan-200 ${showVirtualOnly
+                ? 'bg-gradient-to-r from-cyan-400 to-teal-500 text-white shadow-md border-cyan-500'
+                : 'bg-[var(--bg-2)] text-[var(--text)] border-[var(--border)] hover:bg-[var(--bg-3)]'
+                }`}
               aria-pressed={showVirtualOnly}
             >
-               {showVirtualOnly ? t('marketplace.showingVirtualOnly') : t('marketplace.showVirtualProducts')}
+              {showVirtualOnly ? t('marketplace.showingVirtualOnly') : t('marketplace.showVirtualProducts')}
             </button>
           </div>
         </motion.div>
 
-        
+
 
         {/* Products Grid */}
         <motion.div
@@ -1090,11 +1139,11 @@ function MarketplaceContent() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-      {filteredProducts.length === 0 ? (
+          {filteredProducts.length === 0 ? (
             <div className="text-center py-12">
               <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <p className="text-gray-500 text-lg">{t('marketplace.noProducts')}</p>
-        <p className="text-gray-400">{t('marketplace.noProductsDescription')}</p>
+              <p className="text-[var(--muted)] text-lg">{t('marketplace.noProducts')}</p>
+              <p className="text-gray-400">{t('marketplace.noProductsDescription')}</p>
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -1104,10 +1153,10 @@ function MarketplaceContent() {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
-                  className={`bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-200 hover:scale-105 `}
+                  className={`bg-[var(--card)] rounded-lg border border-[var(--border)] overflow-hidden hover:shadow-lg transition-all duration-200 hover:scale-105 flex flex-col h-full`}
                 >
                   <Link href={`/product/${product.id}`}>
-                    <div className="relative h-48 bg-gray-200 flex items-center justify-center overflow-hidden">
+                    <div className="relative h-48 bg-[var(--bg-3)] flex items-center justify-center overflow-hidden">
                       {/* Badges: Collab + Virtual, visually balanced */}
                       {product.isCollaborative && product.is_virtual ? (
                         <>
@@ -1134,49 +1183,49 @@ function MarketplaceContent() {
                           className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
                         />
                       ) : (
-                        <div className={`w-full h-full bg-gradient-to-br flex items-center justify-center ${
-                          product.isCollaborative 
-                            ? 'from-yellow-100 to-orange-100' 
-                            : 'from-orange-100 to-red-100'
-                        }`}>
-                          <span className={`text-4xl ${
-                            product.isCollaborative ? 'text-yellow-500' : 'text-orange-400'
-                          }`}>🎨</span>
+                        <div className={`w-full h-full bg-gradient-to-br flex items-center justify-center ${product.isCollaborative
+                          ? 'from-yellow-100 to-orange-100'
+                          : 'from-orange-100 to-red-100'
+                          }`}>
+                          <span className={`text-4xl ${product.isCollaborative ? 'text-yellow-500' : 'text-orange-400'
+                            }`}>🎨</span>
                         </div>
                       )}
                     </div>
                   </Link>
-                  <div className="p-4">
+                  <div className="p-4 flex flex-col flex-grow">
                     <Link href={`/product/${product.id}`}>
-                      <h3 className="font-semibold text-gray-900 mb-2 hover:text-orange-600 transition-colors">
+                      <h3 className="font-semibold text-[var(--text)] mb-2 hover:text-orange-600 transition-colors line-clamp-1">
                         {displayProducts.find(p => p.id === product.id)?.title || product.title}
                       </h3>
                     </Link>
-                    <p className="text-sm text-gray-600 mb-2">{displayProducts.find(p => p.id === product.id)?.category || product.category}</p>
+                    <p className="text-sm text-[var(--muted)] mb-2 line-clamp-1">{displayProducts.find(p => p.id === product.id)?.category || product.category}</p>
                     {/* Show collaborators or single seller */}
                     {product.isCollaborative && product.collaborators && product.collaborators.length > 0 ? (
-                      <div className="text-xs mb-3   p-3 rounded-md border border-yellow-200/90 dark:border-yellow-700/30 shadow-sm">
+                      <div className="text-xs mb-3 p-3 rounded-md border border-yellow-200/90 dark:border-yellow-700/30 shadow-sm">
                         <p className="font-medium mb-1 text-yellow-800 dark:text-gray-300">🤝 Collaboration by:</p>
                         <div className="space-y-0.5">
                           {product.collaborators.map((collab) => (
-                            <p key={collab.id} className="text-yellow-800 dark:text-yellow-400 font-semibold">
+                            <p key={collab.id} className="text-yellow-800 dark:text-yellow-400 font-semibold truncate">
                               • {translatedSellerNames[collab.name] || collab.name}
                             </p>
                           ))}
                         </div>
                       </div>
                     ) : (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                      <p className="text-xs text-[var(--muted)] mb-3 line-clamp-1">
                         {(() => {
                           const sellerName = product.seller?.name || ''
                           const translatedName = translatedSellerNames[sellerName] || sellerName
-                          return t('product.byAuthor', { 
-                            name: translatedName || t('product.unknownArtisan') 
+                          return t('product.byAuthor', {
+                            name: translatedName || t('product.unknownArtisan')
                           })
                         })()}
                       </p>
                     )}
-                    <div className="flex items-center justify-between">
+
+                    {/* Price and Actions - Anchored to bottom */}
+                    <div className="mt-auto flex items-center justify-between pt-2 border-t border-[var(--border)]">
                       <p className="text-lg font-bold text-orange-600 dark:text-orange-400">₹{product.price}</p>
                       <div className="flex space-x-2">
                         {/* Voice narration button */}
@@ -1209,10 +1258,14 @@ function MarketplaceContent() {
                         </button>
                         <button
                           id="joyride-wishlist-btn"
-                          className="p-2 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition-colors"
-                          title={t('product.addToWishlist')}
+                          onClick={() => toggleWishlist(product.id)}
+                          className={`p-2 rounded-full transition-colors ${wishlistIds.has(product.id)
+                            ? 'bg-red-50 text-red-500'
+                            : 'bg-[var(--bg-2)] text-[var(--muted)] hover:bg-[var(--bg-3)]'
+                            }`}
+                          title={wishlistIds.has(product.id) ? t('product.removeFromWishlist') : t('product.addToWishlist')}
                         >
-                          <Heart className="w-4 h-4" />
+                          <Heart className={`w-4 h-4 ${wishlistIds.has(product.id) ? 'fill-current' : ''}`} />
                         </button>
                         {/* AR Button */}
                         <button
@@ -1246,7 +1299,7 @@ function MarketplaceContent() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="mt-8 text-center text-gray-600"
+          className="mt-8 text-center text-[var(--muted)]"
         >
           {t('marketplace.resultsCount', { count: filteredProducts.length, total: products.length })}
         </motion.div>
@@ -1259,7 +1312,7 @@ function MarketplaceContent() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="mt-12"
           >
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+            <h2 className="text-2xl font-semibold text-[var(--text)] mb-4">
               {t('marketplace.becauseViewedSimilar')}
             </h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 xl-grid-cols-4 gap-6">
@@ -1269,10 +1322,10 @@ function MarketplaceContent() {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3 }}
-                  className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-200 hover:scale-105"
+                  className="bg-[var(--card)] rounded-lg border border-[var(--border)] overflow-hidden hover:shadow-lg transition-all duration-200 hover:scale-105"
                 >
                   <Link href={`/product/${product.id}`}>
-                    <div className="h-48 bg-gray-200 flex items-center justify-center overflow-hidden">
+                    <div className="h-48 bg-[var(--bg-3)] flex items-center justify-center overflow-hidden">
                       {product.image_url ? (
                         <img
                           src={product.image_url}
@@ -1288,11 +1341,11 @@ function MarketplaceContent() {
                   </Link>
                   <div className="p-4">
                     <Link href={`/product/${product.id}`}>
-                      <h3 className="font-semibold text-gray-900 mb-2 hover:text-orange-600 transition-colors">
+                      <h3 className="font-semibold text-[var(--text)] mb-2 hover:text-orange-600 transition-colors">
                         {product.title}
                       </h3>
                     </Link>
-                    <p className="text-sm text-gray-600 mb-2">{product.category}</p>
+                    <p className="text-sm text-[var(--muted)] mb-2">{product.category}</p>
                     <p className="text-lg font-bold text-orange-600">₹{product.price}</p>
                   </div>
                 </motion.div>
@@ -1300,10 +1353,10 @@ function MarketplaceContent() {
             </div>
           </motion.div>
         )}
-  </div>
-  
-  {/* ARViewer Modal */}
-  <ARViewer open={arOpen} onClose={() => setArOpen(false)} imageUrl={arImageUrl} productType={arProductType} />
+      </div>
+
+      {/* ARViewer Modal */}
+      <ARViewer open={arOpen} onClose={() => setArOpen(false)} imageUrl={arImageUrl} productType={arProductType} />
     </div>
   )
 }
