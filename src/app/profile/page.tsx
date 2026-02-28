@@ -871,37 +871,6 @@ export default function ProfilePage() {
                       <div className="w-10 h-6 bg-[var(--border)] rounded-full relative cursor-pointer"><div className="w-4 h-4 bg-white rounded-full absolute left-1 top-1"></div></div>
                     </div>
                   </div>
-                  <div className="space-y-4">
-                    {orders.slice(0, 2).map(order => (
-                      <div key={order.id} className="flex items-center justify-between p-4 bg-[var(--bg-2)]/50 rounded-xl border border-[var(--border)]">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-[var(--bg-3)] rounded-lg flex items-center justify-center">
-                            <Package className="w-6 h-6 text-[var(--muted)]" />
-                          </div>
-                          <div>
-                            <p className="font-bold text-sm">{order.items[0].name} {order.items.length > 1 && `+${order.items.length - 1} more`}</p>
-                            <p className="text-xs text-[var(--muted)]">Ordered on {order.date}</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold">₹{order.total}</p>
-                          <StatusBadge status={order.status} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {activeTab === 'orders' && (
-              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-2xl font-bold heritage-title">My Orders</h2>
-                  <div className="flex gap-2">
-                    <button className="p-2 rounded-lg bg-[var(--bg-2)] border border-[var(--border)]"><Search className="w-4 h-4" /></button>
-                    <button className="p-2 rounded-lg bg-[var(--bg-2)] border border-[var(--border)]"><Filter className="w-4 h-4" /></button>
-                  </div>
                 </div>
 
                 {/* Danger Zone */}

@@ -53,22 +53,6 @@ type WishlistItem = {
   }
 }
 
-type CartItem = (DatabaseCartItem | AnonymousCartItem) & {
-  isAnonymous?: boolean
-}
-
-type WishlistItem = {
-  id: string
-  title: string
-  price: number
-  image_url: string
-  category: string
-  product_id: string
-  seller?: {
-    name: string
-  }
-}
-
 export default function CartPage() {
   const { user, profile } = useAuth()
   const { t } = useTranslation()
